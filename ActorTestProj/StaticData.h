@@ -3,45 +3,47 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Class.h"
-#include "StaticData.generated.h"
+#include "Math/NumericLimits.h"
+#include "Containers/Set.h"
 
-USTRUCT()
-struct FTypeDataBasic
-{
-    GENERATED_BODY()
+struct FBasicStruct {
+	uint32 id;
 
-    uint32 id;
+	friend uint32 GetTypeHash();
 
-    friend uint32 GetTypeHash(const FTypeDataBasic& MyClass)
-    {
-        uint32 HashCode = MyClass.id;
-        return HashCode;
-    }
+	friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS);
 };
 
-struct FType1Data : public FTypeDataBasic
+bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
 {
-    int32 id;
+	return LHS.id == RHS.id;
+}
 
-    int32 prop1;
-    int32 prop2;
+uint32 GetTypeHash(const FBasicStruct& myStruct) {
+	return myStruct.id;
+}
+
+struct FType1Data: public FBasicStruct {
+	uint32 id;
+
+	int32 prop1;
+	int32 prop2;
 };
 
-struct FType2Data : public FTypeDataBasic
-{
-    int32 id;
-
-    FString prop1;
-    FString prop2;
-};
+//struct FType2Data {
+//	uint32 id;
+//	uint32 GetTypeHash() { return id; }
+//
+//	int32 prop1;
+//	int32 prop2;
+//};
 
 enum class EStaticDataTypes {
-    type1,
-    type2,
+	type1,
+	type2,
 };
 
 struct FStaticData {
-    TSet<FType1Data> type1;
-    TSet<FType2Data> type2;
+	TSet<FType1Data> type1;
+	//TSet<FType2Data> type2;
 };
