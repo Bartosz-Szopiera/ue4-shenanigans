@@ -2,15 +2,17 @@
 
 #include "StaticData.h"
 
-void main() {
-	FStaticData StaticData;
+FStaticData StaticData;
 
+void FSetStaticData() {
 	FType1Data entity1type1;
 	entity1type1.id = 1;
 	entity1type1.prop1 = 11;
 	entity1type1.prop2 = 12;
 
 	StaticData.type1.Add(entity1type1);
+
+	StaticData.dataIsSet = true;
 
 	//FType1Data entity2type1;
 	//entity1type1.id = 12321111;
@@ -32,4 +34,24 @@ void main() {
 	//entity1type1.prop2 = 222;
 
 	//StaticData.type2.Add(entity2type2);
-}
+};
+
+/*
+* Static Data Manager
+*/
+//template<typename T>
+class FSDManager {
+	FSDManager() {
+		initStaticData();
+	};
+
+	void initStaticData() {
+		if (!StaticData.dataIsSet) {
+			FSetStaticData();
+		}
+	};
+
+	//virtual T getTypeInstanceData();
+
+	//setTypeInstanceData()
+};
