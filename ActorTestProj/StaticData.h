@@ -50,10 +50,9 @@ class FSDManager {
 public:
 	static FStaticData StaticData;
 
-	template<ESDTypes E>
-	static TMap<uint32, FTypeData<E>> getTypeData() { return StaticData.type1; };
-	template<> static TMap<uint32, FTypeData<ESDTypes::type1>> getTypeData<ESDTypes::type1>() { return StaticData.type1; };
-	template<> static TMap<uint32, FTypeData<ESDTypes::type2>> getTypeData<ESDTypes::type2>() { return StaticData.type2; };
+	static bool staticDataLoaded() {
+		return StaticData.dataIsSet;
+	};
 
 	template<ESDTypes E>
 	static FTypeData<ESDTypes::type1>& getTypeInstanceData(uint32 instanceId) {
@@ -65,9 +64,10 @@ public:
 		return typeData[instanceId];
 	};
 
-	static bool staticDataLoaded() {
-		return StaticData.dataIsSet;
-	};
+	template<ESDTypes E>
+	static TMap<uint32, FTypeData<E>> getTypeData() { return StaticData.type1; };
+	template<> static TMap<uint32, FTypeData<ESDTypes::type1>> getTypeData<ESDTypes::type1>() { return StaticData.type1; };
+	template<> static TMap<uint32, FTypeData<ESDTypes::type2>> getTypeData<ESDTypes::type2>() { return StaticData.type2; };
 
 	static void FSetStaticData() {
 		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Running FSetStaticData"));
