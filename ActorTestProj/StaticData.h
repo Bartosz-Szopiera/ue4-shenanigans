@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "StaticData.generated.h"
+
 struct FBasicStruct {
 	uint32 id;
 
@@ -39,7 +41,10 @@ struct FTypeData {};
 template<> struct FTypeData<ESDTypes::type1> : public FType1Data {};
 template<> struct FTypeData<ESDTypes::type2> : public FType2Data {};
 
+USTRUCT(BlueprintType)
 struct FStaticData {
+	GENERATED_BODY()
+
 	TMap<uint32, FTypeData<ESDTypes::type1>> type1;
 	TMap<uint32, FTypeData<ESDTypes::type2>> type2;
 

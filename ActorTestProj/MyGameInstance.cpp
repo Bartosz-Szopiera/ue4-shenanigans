@@ -15,3 +15,7 @@ UMyGameInstance::UMyGameInstance() {
 	FSDManager::FSetStaticData();
 };
 
+FStaticData UMyGameInstance::GetStaticData() {
+	return FSDManager::StaticData;
+}
+
