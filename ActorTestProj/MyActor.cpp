@@ -13,9 +13,10 @@ AMyActor::AMyActor():
 
 	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData<ESDTypes::type1>(ESDTypes::type1, 1);
 	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData<ESDTypes::type1>(1);
+	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Instantiating an actor"));
 	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData(1);
-	/*TotalDamage = instanceData.prop1;
-	DamageTimeInSeconds = instanceData.prop2;*/
+	//TotalDamage = instanceData.prop1;
+	//DamageTimeInSeconds = instanceData.prop2;
 
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	VisualMesh->SetupAttachment(RootComponent);
@@ -32,6 +33,7 @@ AMyActor::AMyActor():
 // Called when the game starts or when spawned
 void AMyActor::BeginPlay()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Actor play begins"));
 	Super::BeginPlay();
 	
 }
@@ -45,6 +47,8 @@ void AMyActor::Tick(float DeltaTime)
 
 void AMyActor::PostInitProperties()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Post init properties"));
+
 	Super::PostInitProperties();
 	
 	CalculateValues();
@@ -53,6 +57,13 @@ void AMyActor::PostInitProperties()
 void AMyActor::CalculateValues()
 {
 	DamagePerSecond = TotalDamage / DamageTimeInSeconds;
+}
+
+void AMyActor::PostLoad()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Post actor load"));
+
+	Super::PostLoad();
 }
 
 #if WITH_EDITOR

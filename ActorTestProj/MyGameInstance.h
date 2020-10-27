@@ -14,6 +14,11 @@ class ACTORTESTPROJ_API UMyGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
+public:
+	void Init() {
+		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Initializing GameInstance"));
+	}
+
 private:
 
 	UMyGameInstance();

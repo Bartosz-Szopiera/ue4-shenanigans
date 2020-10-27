@@ -41,4 +41,8 @@ public:
 	virtual void CalculateValues();
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
+
+	virtual void PostLoad();
+
+	virtual void LoadStaticData();
 };

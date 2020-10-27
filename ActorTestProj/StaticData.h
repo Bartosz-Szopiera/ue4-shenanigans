@@ -2,34 +2,18 @@
 
 #pragma once
 
-//#include "CoreMinimal.h"
-//#include "Math/NumericLimits.h"
-//#include "Containers/Set.h"
-
 struct FBasicStruct {
 	uint32 id;
-
-	//friend uint32 GetTypeHash();
 
 	friend uint32 GetTypeHash(const FBasicStruct& myStruct) {
 		return myStruct.id;
 	}
 
-	//friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS);
 	friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
 	{
 		return LHS.id == RHS.id;
 	}
 };
-
-//bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
-//{
-//	return LHS.id == RHS.id;
-//}
-
-//uint32 GetTypeHash(const FBasicStruct& myStruct) {
-//	return myStruct.id;
-//}
 
 struct FType1Data : public FBasicStruct {
 	uint32 id;
@@ -109,6 +93,14 @@ public:
 		//TMap<uint32, FTypeData<E>> typeData = getTypeData<E>(dataType);
 		//TMap<uint32, FTypeData<E>> typeData = getTypeData<E>();
 		TMap<uint32, FTypeData<ESDTypes::type1>> typeData = getTypeData();
+		bool hasInstance = typeData.Contains(instanceId);
+		if (!hasInstance) {
+			UE_LOG(LogTemp, Warning, TEXT("[MYLOG] There was no item"));
+		}
 		return typeData[instanceId];
+	};
+
+	static bool staticDataLoaded() {
+		return StaticData.dataIsSet;
 	};
 };
