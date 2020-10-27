@@ -2,17 +2,56 @@
 
 #include "StaticData.h"
 
-FStaticData StaticData;
+/*
+* Static Data Manager
+*/
+class FSDManager {
+	/*FSDManager() {
+		initStaticData();
+	};*/
 
-void FSetStaticData() {
+private:
+	/*void initStaticData() {
+		if (!StaticData.dataIsSet) {
+			FSetStaticData();
+		}
+	};*/
+
+public:
+	static FStaticData StaticData;
+
+	template<ESDTypes E>
+	FTypeData<E> getTypeInstanceData(ESDTypes dataType) {
+		switch (dataType)
+		{
+		case ESDTypes::type1:
+			StaticData.type1;
+			break;
+		case ESDTypes::type2:
+			StaticData.type2;
+			break;
+		}
+	};
+};
+
+FStaticData FSetStaticData() {
 	FType1Data entity1type1;
 	entity1type1.id = 1;
 	entity1type1.prop1 = 11;
 	entity1type1.prop2 = 12;
 
-	StaticData.type1.Add(entity1type1);
+	FSDManager::StaticData.type1.Add(entity1type1.id, entity1type1);
 
-	StaticData.dataIsSet = true;
+	return FSDManager::StaticData;
+
+	/*FType1Data entity1type2;
+	entity1type1.id = 21;
+	entity1type1.prop1 = 21;
+	entity1type1.prop2 = 22;
+
+	StaticData.type1.Add(entity1type2.id, entity1type2);
+
+	StaticData.dataIsSet = true;*/
 
 	//FType1Data entity2type1;
 	//entity1type1.id = 12321111;
@@ -34,24 +73,9 @@ void FSetStaticData() {
 	//entity1type1.prop2 = 222;
 
 	//StaticData.type2.Add(entity2type2);
-};
+}
 
-/*
-* Static Data Manager
-*/
-//template<typename T>
-class FSDManager {
-	FSDManager() {
-		initStaticData();
-	};
-
-	void initStaticData() {
-		if (!StaticData.dataIsSet) {
-			FSetStaticData();
-		}
-	};
-
-	//virtual T getTypeInstanceData();
-
-	//setTypeInstanceData()
-};
+/**
+ * Initializing static data
+ */
+FStaticData FSDManager::StaticData = FSetStaticData();
