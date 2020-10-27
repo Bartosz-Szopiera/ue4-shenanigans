@@ -9,19 +9,27 @@
 struct FBasicStruct {
 	uint32 id;
 
-	friend uint32 GetTypeHash();
+	//friend uint32 GetTypeHash();
 
-	friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS);
+	friend uint32 GetTypeHash(const FBasicStruct& myStruct) {
+		return myStruct.id;
+	}
+
+	//friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS);
+	friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
+	{
+		return LHS.id == RHS.id;
+	}
 };
 
-bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
-{
-	return LHS.id == RHS.id;
-}
+//bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
+//{
+//	return LHS.id == RHS.id;
+//}
 
-uint32 GetTypeHash(const FBasicStruct& myStruct) {
-	return myStruct.id;
-}
+//uint32 GetTypeHash(const FBasicStruct& myStruct) {
+//	return myStruct.id;
+//}
 
 struct FType1Data : public FBasicStruct {
 	uint32 id;
@@ -52,4 +60,55 @@ struct FStaticData {
 	TMap<uint32, FTypeData<ESDTypes::type2>> type2;
 
 	bool dataIsSet;
+};
+
+class FSDManager {
+	FSDManager() {
+		//initStaticData();
+	};
+
+private:
+	/*void initStaticData() {
+		if (!StaticData.dataIsSet) {
+			FSetStaticData();
+		}
+	};*/
+
+public:
+	// Does it need to be static after all?
+	static FStaticData StaticData;
+
+	//template<ESDTypes E>
+	//static TMap<uint32, FTypeData<E>> getTypeData() {
+	//	switch (E)
+	//	{
+	//	case ESDTypes::type1:
+	//		return StaticData.type1;
+	//		//break;
+	//	case ESDTypes::type2:
+	//		return StaticData.type2;
+	//		//break;
+	//	}
+	//};
+	static TMap<uint32, FTypeData<ESDTypes::type1>> getTypeData() {
+		return StaticData.type1;
+		//switch (E)
+		//{
+		//case ESDTypes::type1:
+		//	return StaticData.type1;
+		//	//break;
+		//case ESDTypes::type2:
+		//	return StaticData.type2;
+		//	//break;
+		//}
+	};
+
+	//template<ESDTypes E>
+	//static FTypeData<E>& getTypeInstanceData(ESDTypes dataType, uint32 instanceId) {
+	static FTypeData<ESDTypes::type1>& getTypeInstanceData(uint32 instanceId) {
+		//TMap<uint32, FTypeData<E>> typeData = getTypeData<E>(dataType);
+		//TMap<uint32, FTypeData<E>> typeData = getTypeData<E>();
+		TMap<uint32, FTypeData<ESDTypes::type1>> typeData = getTypeData();
+		return typeData[instanceId];
+	};
 };

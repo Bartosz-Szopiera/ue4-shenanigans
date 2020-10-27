@@ -1,6 +1,7 @@
 // 2020 Purple Pill Productions.
 
 #include "MyActor.h"
+#include "StaticData.h"
 
 // Sets default values
 AMyActor::AMyActor():
@@ -9,6 +10,12 @@ AMyActor::AMyActor():
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData<ESDTypes::type1>(ESDTypes::type1, 1);
+	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData<ESDTypes::type1>(1);
+	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData(1);
+	/*TotalDamage = instanceData.prop1;
+	DamageTimeInSeconds = instanceData.prop2;*/
 
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	VisualMesh->SetupAttachment(RootComponent);
