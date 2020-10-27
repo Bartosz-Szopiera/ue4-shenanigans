@@ -18,61 +18,49 @@ private:
 	};*/
 
 public:
+	// Does it need to be static after all?
 	static FStaticData StaticData;
 
 	template<ESDTypes E>
-	FTypeData<E> getTypeInstanceData(ESDTypes dataType) {
+	static TMap<uint32, FTypeData<E>>& getTypeData(ESDTypes dataType) {
 		switch (dataType)
 		{
 		case ESDTypes::type1:
-			StaticData.type1;
+			return StaticData.type1;
 			break;
 		case ESDTypes::type2:
-			StaticData.type2;
+			return StaticData.type2;
 			break;
 		}
+	};
+
+	template<ESDTypes E>
+	static FTypeData<E>& getTypeInstanceData(ESDTypes dataType, uint32 instanceId) {
+		TMap<uint32, FTypeData<E>>& typeData = getTypeData(dataType);
+		return typeData[instanceId];
 	};
 };
 
 FStaticData FSetStaticData() {
-	FType1Data entity1type1;
+	// type1
+	FTypeData<ESDTypes::type1> entity1type1;
 	entity1type1.id = 1;
 	entity1type1.prop1 = 11;
 	entity1type1.prop2 = 12;
 
 	FSDManager::StaticData.type1.Add(entity1type1.id, entity1type1);
 
-	return FSDManager::StaticData;
-
-	/*FType1Data entity1type2;
+	// type2
+	FTypeData<ESDTypes::type2> entity1type2;
 	entity1type1.id = 21;
 	entity1type1.prop1 = 21;
 	entity1type1.prop2 = 22;
 
-	StaticData.type1.Add(entity1type2.id, entity1type2);
+	FSDManager::StaticData.type2.Add(entity1type2.id, entity1type2);
 
-	StaticData.dataIsSet = true;*/
-
-	//FType1Data entity2type1;
-	//entity1type1.id = 12321111;
-	//entity1type1.prop1 = 111;
-	//entity1type1.prop2 = 112;
-
-	//StaticData.type1.Add(entity2type1);
-
-	//FType2Data entity1type2;
-	//entity1type1.id = 112222345555;
-	//entity1type1.prop1 = 21;
-	//entity1type1.prop2 = 22;
-
-	//StaticData.type2.Add(entity1type2);
-
-	//FType2Data entity2type2;
-	//entity1type1.id = 11333345555;
-	//entity1type1.prop1 = 221;
-	//entity1type1.prop2 = 222;
-
-	//StaticData.type2.Add(entity2type2);
+	// Wrapping up
+	FSDManager::StaticData.dataIsSet = true;
+	return FSDManager::StaticData;
 }
 
 /**

@@ -44,29 +44,12 @@ enum class ESDTypes {
 
 template<ESDTypes E>
 struct FTypeData {};
-template<> struct FTypeData<ESDTypes::type1> : FType1Data {};
-template<> struct FTypeData<ESDTypes::type2> : FType2Data {};
-
-//template<ESDTypes E>
-//TMap<ESDTypes, TMap<uint32, FTypeData<E>>> FStaticDataMap
-
+template<> struct FTypeData<ESDTypes::type1> : public FType1Data {};
+template<> struct FTypeData<ESDTypes::type2> : public FType2Data {};
 
 struct FStaticData {
-	TMap<uint32, FType1Data> type1;
+	TMap<uint32, FTypeData<ESDTypes::type1>> type1;
 	TMap<uint32, FTypeData<ESDTypes::type2>> type2;
 
 	bool dataIsSet;
 };
-
-
-//struct FStaticData {
-//	TMap<uint32, FTypeData<ESDTypes::type1>> ESDTypes::type1;
-//	//TSet<FType2Data> type2;
-//	bool dataIsSet;
-//};
-
-//struct FStaticData {
-//	TSet<FType1Data> ESDTypes::type1;
-//	//TSet<FType2Data> type2;
-//	bool dataIsSet;
-//};
