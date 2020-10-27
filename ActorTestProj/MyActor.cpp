@@ -11,12 +11,7 @@ AMyActor::AMyActor():
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData<ESDTypes::type1>(ESDTypes::type1, 1);
-	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData<ESDTypes::type1>(1);
-	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Instantiating an actor"));
-	//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData(1);
-	//TotalDamage = instanceData.prop1;
-	//DamageTimeInSeconds = instanceData.prop2;
+	MaybeLoadStaticData();
 
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	VisualMesh->SetupAttachment(RootComponent);
@@ -63,7 +58,23 @@ void AMyActor::PostLoad()
 {
 	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Post actor load"));
 
+	MaybeLoadStaticData();
+
 	Super::PostLoad();
+}
+
+void AMyActor::MaybeLoadStaticData()
+{
+	if (FSDManager::staticDataLoaded()) {
+		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] --------> Setting static data for actor."));
+		FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData<ESDTypes::type1>(1);
+		//FTypeData<ESDTypes::type1> instanceData = FSDManager::getTypeInstanceData(1);
+		TotalDamage = instanceData.prop1;
+		DamageTimeInSeconds = instanceData.prop2;
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] --------> !! Static data was not loaded."));
+	}
 }
 
 #if WITH_EDITOR

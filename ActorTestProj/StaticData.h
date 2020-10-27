@@ -47,52 +47,17 @@ struct FStaticData {
 };
 
 class FSDManager {
-	FSDManager() {
-		//initStaticData();
-	};
-
-private:
-	/*void initStaticData() {
-		if (!StaticData.dataIsSet) {
-			FSetStaticData();
-		}
-	};*/
-
 public:
-	// Does it need to be static after all?
 	static FStaticData StaticData;
 
-	//template<ESDTypes E>
-	//static TMap<uint32, FTypeData<E>> getTypeData() {
-	//	switch (E)
-	//	{
-	//	case ESDTypes::type1:
-	//		return StaticData.type1;
-	//		//break;
-	//	case ESDTypes::type2:
-	//		return StaticData.type2;
-	//		//break;
-	//	}
-	//};
-	static TMap<uint32, FTypeData<ESDTypes::type1>> getTypeData() {
-		return StaticData.type1;
-		//switch (E)
-		//{
-		//case ESDTypes::type1:
-		//	return StaticData.type1;
-		//	//break;
-		//case ESDTypes::type2:
-		//	return StaticData.type2;
-		//	//break;
-		//}
-	};
+	template<ESDTypes E>
+	static TMap<uint32, FTypeData<E>> getTypeData() { return StaticData.type1; };
+	template<> static TMap<uint32, FTypeData<ESDTypes::type1>> getTypeData<ESDTypes::type1>() { return StaticData.type1; };
+	template<> static TMap<uint32, FTypeData<ESDTypes::type2>> getTypeData<ESDTypes::type2>() { return StaticData.type2; };
 
-	//template<ESDTypes E>
-	//static FTypeData<E>& getTypeInstanceData(ESDTypes dataType, uint32 instanceId) {
+	template<ESDTypes E>
 	static FTypeData<ESDTypes::type1>& getTypeInstanceData(uint32 instanceId) {
-		//TMap<uint32, FTypeData<E>> typeData = getTypeData<E>(dataType);
-		//TMap<uint32, FTypeData<E>> typeData = getTypeData<E>();
-		TMap<uint32, FTypeData<ESDTypes::type1>> typeData = getTypeData();
+		TMap<uint32, FTypeData<E>> typeData = getTypeData<E>();
 		bool hasInstance = typeData.Contains(instanceId);
 		if (!hasInstance) {
 			UE_LOG(LogTemp, Warning, TEXT("[MYLOG] There was no item"));
@@ -103,4 +68,29 @@ public:
 	static bool staticDataLoaded() {
 		return StaticData.dataIsSet;
 	};
+
+	static void FSetStaticData() {
+		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Running FSetStaticData"));
+		// type1
+		FTypeData<ESDTypes::type1> entity1type1;
+		entity1type1.id = 1;
+		entity1type1.prop1 = 11;
+		entity1type1.prop2 = 12;
+
+		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
+
+		StaticData.type1.Add(entity1type1.id, entity1type1);
+
+		// type2
+		FTypeData<ESDTypes::type2> entity1type2;
+		entity1type1.id = 21;
+		entity1type1.prop1 = 21;
+		entity1type1.prop2 = 22;
+
+		StaticData.type2.Add(entity1type2.id, entity1type2);
+
+		// Wrapping up
+		StaticData.dataIsSet = true;
+		//return FSDManager::StaticData;
+	}
 };

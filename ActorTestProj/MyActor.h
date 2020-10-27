@@ -44,5 +44,5 @@ public:
 
 	virtual void PostLoad();
 
-	virtual void LoadStaticData();
+	virtual void MaybeLoadStaticData();
 };
