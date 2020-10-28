@@ -4,35 +4,40 @@
 
 #include "StaticData.generated.h"
 
-enum class ESimpleValueTypes {
+enum class EValueTypes {
 	uint32 = 0 ,
 	int32,
 	flt,
 	string,
 };
 
-enum class EComplexValueTypes {
-	arr
-};
-
-struct FSDSimple {
-	ESimpleValueTypes valueType,
-	string value,
-};
-
-struct FSDComplex {
-	EComplexValueTypes valueType,
-	FSDSimple value[],
-};
-
-union UValueType {
-	FSDSimple simple,
-	FSDComplex complex,
-};
+//enum class EComplexValueTypes {
+//	arr
+//};
+//
+//struct FSDSimple {
+//	ESimpleValueTypes valueType,
+//	string value,
+//};
+//
+//struct FSDComplex {
+//	EComplexValueTypes valueType,
+//	FSDSimple value[],
+//};
+//
+//union UValueType {
+//	FSDSimple simple,
+//	FSDComplex complex,
+//};
 
 struct FPropValue {
-	string propName,
-	UValueType propValue,
+	EValueTypes valueType;
+	string value[];
+};
+
+struct FPropDescriptor {
+	string propName;
+	FPropValue propValue;
 };
 
 void FSetInstanceValues(FPropValue values[], FBasicStruct& instance) {
@@ -103,16 +108,14 @@ extractedChunks extractChunks(char delimiter = ';', std::string data) {
 	uint32 chunkEnd = 0;
 	extractedChunks extracted;
 	uint32 extracted.count = 0;
+	// TODO: try taking this length down as low as possible
 	string extracted.chunks[20];
 
-	auto copyCurrentChunk = []() {
+	auto saveChunk = [&]() {
 		uint32 length = chunkEnd - chunkStart;
-		char temp[length];
-		encodedInstance.copy((char*)temp, length, chunkStart);
-		return temp;
-	};
-
-	auto saveChunk = [&]() { extracted.chunks[extracted.count] = copyCurrentChunk(); extracted.count++; }
+		extracted.chunks[extracted.count] = data.substr(chunkStart, length);
+		extracted.count++;
+	}
 
 	for (char c : encodedInstance) {
 		if (c == delimiter || c == '\n') {
@@ -131,11 +134,43 @@ extractedChunks extractChunks(char delimiter = ';', std::string data) {
 void FDecodeInstanceData(std::string encodedInstance) {
 	int32 typeCode = encodedInstance[0];
 	encodedInstance.erase(encodedInstance.begin());
-	extractedChunks chunks = extractChunks(';', encodedInstance);
+	extractedChunks instancePropsChunks = extractChunks(';', encodedInstance);
 
+	// Array of PropDescriptors
+	FPropDescriptor propValues[instancePropsChunks.count];
 
-	auto parsePropChunk = [](std:strin propChunk) {
+	string propName;
+	string propValueType;
+	string propValues[20];
 
+	for (int32 i = 0; i <= instancePropsChunks.count; i++) {
+		string propChunk = instancePropsChunks[i];
+		extractedChunks propDescriptors = extractChunks(',', propChunk);
+
+		propName = propDescriptors.chunks[1];
+		propValueType = propDescriptors.chunks[0];
+
+		if (propDescriptors.count == 3) { // simple data
+			propValues[1] = propDescriptors.chunks[2];
+		}
+		else { // array
+			for (string i = 0; (i + 2) < propDescriptors.chunks.size(); ++i) {
+				propValues[i] = propDescriptors.chunks[i + 2];
+			}
+		}
+
+		propValues[i].propName = 
+	}
+
+	auto parsePropChunk = [](std:string propChunk) {
+		extractedChunks propDescriptorChunks = extractChunks(',', propChunk);
+		
+		if (propDescriptorChunks.count == 3) { // simple data
+
+		}
+		else { // array
+
+		}
 	}
 
 	FSetInstance(static_cast<ESDTypes>(static_cast<int>(typeCode)), propChunks);
@@ -159,7 +194,7 @@ void FEncodeInstanceData() {
 
 void FSetInstanceOfType1() {
 	FTypeData<ESDTypes::type1> instance;
-	FSetProperty(instance.prop1, "prop1", )
+	FSetProperty(&instance.prop1, "prop1", )
 
 	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
 	StaticData.type1.Add(instance.id, instance);
