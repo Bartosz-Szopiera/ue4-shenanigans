@@ -5,11 +5,10 @@
 #include "StaticData.generated.h"
 
 enum class ESimpleValueTypes {
-	uint32,
+	uint32 = 0 ,
 	int32,
 	flt,
 	string,
-	id,
 };
 
 enum class EComplexValueTypes {
@@ -35,15 +34,6 @@ struct FPropValue {
 	string propName,
 	UValueType propValue,
 };
-
-/**
- * propNames: [ {"propA"}, {"propB"}, {"propC"}... ]
- * values: [ {"Exmaple text", {"1.255487"}, {"15454215478"}, {"[ {"574587"}, {"78457833"} ]"} ]
- * types: [ {"string", {"flt"}, {"uint32"}, {"arr"} ]
- * 
- * 
- * 
- */
 
 void FSetInstanceValues(FPropValue values[], FBasicStruct& instance) {
 
@@ -103,22 +93,18 @@ void FSetEntityData(FTypeData<E>& e) { e.prop1; };
 template<> void FSetEntityData<ESDTypes::type1>() { return StaticData.type1; };
 template<> void FSetEntityData<ESDTypes::type2>() { return StaticData.type2; };
 
-void FSetProperty(void* propPtr, string propName, string encodedData) {
-	// Compare types and names and throw in case of mismatch.
+struct extractedChunks {
+	string chunks[];
+	uint32 count;
 };
 
-/**
- * 
- */
-void FDecodeInstanceData(std::string encodedInstance) {
-	char typeCode;
-	char delimiter = ';';
-	string propChunks[20]; // assuming that there is no more than 20 props
-
+extractedChunks extractChunks(char delimiter = ';', std::string data) {
 	uint32 chunkStart = 0;
 	uint32 chunkEnd = 0;
-	uint32 propCount = 0;
-	
+	extractedChunks extracted;
+	uint32 extracted.count = 0;
+	string extracted.chunks[20];
+
 	auto copyCurrentChunk = []() {
 		uint32 length = chunkEnd - chunkStart;
 		char temp[length];
@@ -126,18 +112,42 @@ void FDecodeInstanceData(std::string encodedInstance) {
 		return temp;
 	};
 
-	auto saveProp = [&]() { propChunks[propCount] = copyCurrentChunk(); }
-	auto saveType = [&]() { typeCode = copyCurrentChunk(); }
+	auto saveChunk = [&]() { extracted.chunks[extracted.count] = copyCurrentChunk(); extracted.count++; }
 
 	for (char c : encodedInstance) {
-		if (c == delimiter) {
-			if (chunkStart == 0) { saveType(); } // type signature
-			else { saveProp(); propCount++; } // prop signature
+		if (c == delimiter || c == '\n') {
+			saveChunk();
 			chunkStart = chunkEnd;
 		}
-		else if (c == '\n') { saveProp() } // last prop signature
 		chunkEnd++;
 	};
+
+	return extracted;
+};
+
+/**
+ * 
+ */
+void FDecodeInstanceData(std::string encodedInstance) {
+	int32 typeCode = encodedInstance[0];
+	encodedInstance.erase(encodedInstance.begin());
+	extractedChunks chunks = extractChunks(';', encodedInstance);
+
+
+	auto parsePropChunk = [](std:strin propChunk) {
+
+	}
+
+	FSetInstance(static_cast<ESDTypes>(static_cast<int>(typeCode)), propChunks);
+};
+
+
+void FSetInstance(ESDTypes type, string propChunks[]) {
+
+};
+
+void FSetProperty(void* propPtr, string propName, std::string encodedData) {
+	// Compare types and names and throw in case of mismatch.
 };
 
 /**
