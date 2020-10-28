@@ -4,6 +4,52 @@
 
 #include "StaticData.generated.h"
 
+enum class ESimpleValueTypes {
+	uint32,
+	int32,
+	flt,
+	string,
+	id,
+};
+
+enum class EComplexValueTypes {
+	arr
+};
+
+struct FSDSimple {
+	ESimpleValueTypes valueType,
+	string value,
+};
+
+struct FSDComplex {
+	EComplexValueTypes valueType,
+	FSDSimple value[],
+};
+
+union UValueType {
+	FSDSimple simple,
+	FSDComplex complex,
+};
+
+struct FPropValue {
+	string propName,
+	UValueType propValue,
+};
+
+/**
+ * propNames: [ {"propA"}, {"propB"}, {"propC"}... ]
+ * values: [ {"Exmaple text", {"1.255487"}, {"15454215478"}, {"[ {"574587"}, {"78457833"} ]"} ]
+ * types: [ {"string", {"flt"}, {"uint32"}, {"arr"} ]
+ * 
+ * 
+ * 
+ */
+
+void FSetInstanceValues(FPropValue values[], FBasicStruct& instance) {
+
+}
+
+
 struct FBasicStruct {
 	uint32 id;
 
