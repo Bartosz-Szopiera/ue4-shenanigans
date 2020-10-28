@@ -53,6 +53,8 @@ void FSetInstanceValues(FPropValue values[], FBasicStruct& instance) {
 struct FBasicStruct {
 	uint32 id;
 
+	void InitializeSefl() {};
+
 	friend uint32 GetTypeHash(const FBasicStruct& myStruct) {
 		return myStruct.id;
 	}
@@ -63,7 +65,15 @@ struct FBasicStruct {
 	}
 };
 
+template<ESDTypes E>
+struct FSDSetter {};
+template<> struct FTypeData<ESDTypes::type1> {};
+template<> struct FTypeData<ESDTypes::type2> {};
+
 struct FType1Data : public FBasicStruct {
+	string type[1] = { "type1" };
+	string values[][3] = {{"0", "0", }}
+
 	uint32 id;
 
 	int32 prop1;
@@ -77,13 +87,72 @@ struct FType2Data : public FBasicStruct {
 	int32 prop2;
 };
 
+void FGetRawStaticData() {
+	/**
+	 * Reads static data file line by line
+	 * 
+	 */
+}
+
+void FSetEntityData() {
+
+}
+
+template<ESDTypes E>
+void FSetEntityData(FTypeData<E>& e) { e.prop1; };
+template<> void FSetEntityData<ESDTypes::type1>() { return StaticData.type1; };
+template<> void FSetEntityData<ESDTypes::type2>() { return StaticData.type2; };
+
+void FSetProperty(void* propPtr, string encodedData) {
+	
+}
+
+void FsetInstanceOfType1() {
+
+}
+
+void FInitializeStaticData() {
+
+	switch (ESDTypes)
+	{
+	case ESDTypes::type1:
+		break;
+	case ESDTypes::type2:
+
+	}
+	FTypeData<ESDTypes::type1>
+
+	FTypeData<ESDTypes::type1> entity1type1;
+	entity1type1.id = 1;
+	entity1type1.prop1 = 11;
+	entity1type1.prop2 = 12;
+
+	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
+
+	StaticData.type1.Add(entity1type1.id, entity1type1);
+
+};
+
 enum class ESDTypes {
-	type1,
-	type2,
+	type1 = 0,
+	type2 = 1,
 };
 
 template<ESDTypes E>
-struct FTypeData {};
+struct FTypeData {
+	/*uint32 id;
+
+	void InitializeSefl() {};
+
+	friend uint32 GetTypeHash(const FBasicStruct& myStruct) {
+		return myStruct.id;
+	}
+
+	friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
+	{
+		return LHS.id == RHS.id;
+	}*/
+};
 template<> struct FTypeData<ESDTypes::type1> : public FType1Data {};
 template<> struct FTypeData<ESDTypes::type2> : public FType2Data {};
 
