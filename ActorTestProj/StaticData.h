@@ -103,12 +103,56 @@ void FSetEntityData(FTypeData<E>& e) { e.prop1; };
 template<> void FSetEntityData<ESDTypes::type1>() { return StaticData.type1; };
 template<> void FSetEntityData<ESDTypes::type2>() { return StaticData.type2; };
 
-void FSetProperty(void* propPtr, string encodedData) {
+void FSetProperty(void* propPtr, string propName, string encodedData) {
+	// Compare types and names and throw in case of mismatch.
+};
+
+/**
+ * 
+ */
+void FDecodeInstanceData(std::string encodedInstance) {
+	char typeCode;
+	char delimiter = ';';
+	string propChunks[20]; // assuming that there is no more than 20 props
+
+	uint32 chunkStart = 0;
+	uint32 chunkEnd = 0;
+	uint32 propCount = 0;
 	
-}
+	auto copyCurrentChunk = []() {
+		uint32 length = chunkEnd - chunkStart;
+		char temp[length];
+		encodedInstance.copy((char*)temp, length, chunkStart);
+		return temp;
+	};
 
-void FsetInstanceOfType1() {
+	auto saveProp = [&]() { propChunks[propCount] = copyCurrentChunk(); }
+	auto saveType = [&]() { typeCode = copyCurrentChunk(); }
 
+	for (char c : encodedInstance) {
+		if (c == delimiter) {
+			if (chunkStart == 0) { saveType(); } // type signature
+			else { saveProp(); propCount++; } // prop signature
+			chunkStart = chunkEnd;
+		}
+		else if (c == '\n') { saveProp() } // last prop signature
+		chunkEnd++;
+	};
+};
+
+/**
+ * 
+ */
+void FEncodeInstanceData() {
+	
+};
+
+void FSetInstanceOfType1() {
+	FTypeData<ESDTypes::type1> instance;
+	FSetProperty(instance.prop1, "prop1", )
+
+	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
+	StaticData.type1.Add(instance.id, instance);
 }
 
 void FInitializeStaticData() {
