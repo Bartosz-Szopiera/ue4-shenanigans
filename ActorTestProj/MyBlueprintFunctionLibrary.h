@@ -18,7 +18,13 @@ class ACTORTESTPROJ_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionL
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "Static Data")
-	FStaticData GetStaticData() {
+	static FStaticData GetStaticData() {
 		return FSDManager::StaticData;
 	}
+
+	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
+	template<ESDTypes E>
+	static FTypeData<E> GetTypeInstanceData(ESDTypes dataType) {
+		return FSDManager::getTypeInstanceData<dataType>(1);
+	};*/
 };

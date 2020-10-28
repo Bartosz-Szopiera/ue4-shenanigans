@@ -60,7 +60,7 @@ public:
 	};
 
 	template<ESDTypes E>
-	static FTypeData<ESDTypes::type1>& getTypeInstanceData(uint32 instanceId) {
+	static FTypeData<E>& getTypeInstanceData(uint32 instanceId) {
 		TMap<uint32, FTypeData<E>> typeData = getTypeData<E>();
 		bool hasInstance = typeData.Contains(instanceId);
 		if (!hasInstance) {
