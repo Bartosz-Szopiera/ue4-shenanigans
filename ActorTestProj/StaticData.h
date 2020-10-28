@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <any>
+#include <vector>
+#include <array>
 #include "StaticData.generated.h"
 
 enum class EValueTypes {
@@ -9,41 +12,8 @@ enum class EValueTypes {
 	int32,
 	flt,
 	string,
+	boolean,
 };
-
-//enum class EComplexValueTypes {
-//	arr
-//};
-//
-//struct FSDSimple {
-//	ESimpleValueTypes valueType,
-//	string value,
-//};
-//
-//struct FSDComplex {
-//	EComplexValueTypes valueType,
-//	FSDSimple value[],
-//};
-//
-//union UValueType {
-//	FSDSimple simple,
-//	FSDComplex complex,
-//};
-
-struct FPropValue {
-	EValueTypes valueType;
-	string value[];
-};
-
-struct FPropDescriptor {
-	string propName;
-	FPropValue propValue;
-};
-
-void FSetInstanceValues(FPropValue values[], FBasicStruct& instance) {
-
-}
-
 
 struct FBasicStruct {
 	uint32 id;
@@ -60,15 +30,7 @@ struct FBasicStruct {
 	}
 };
 
-template<ESDTypes E>
-struct FSDSetter {};
-template<> struct FTypeData<ESDTypes::type1> {};
-template<> struct FTypeData<ESDTypes::type2> {};
-
 struct FType1Data : public FBasicStruct {
-	string type[1] = { "type1" };
-	string values[][3] = {{"0", "0", }}
-
 	uint32 id;
 
 	int32 prop1;
@@ -89,27 +51,23 @@ void FGetRawStaticData() {
 	 */
 }
 
-void FSetEntityData() {
-
-}
-
 template<ESDTypes E>
 void FSetEntityData(FTypeData<E>& e) { e.prop1; };
 template<> void FSetEntityData<ESDTypes::type1>() { return StaticData.type1; };
 template<> void FSetEntityData<ESDTypes::type2>() { return StaticData.type2; };
 
 struct extractedChunks {
-	string chunks[];
+	std::vector<string> chunks;
 	uint32 count;
 };
 
-extractedChunks extractChunks(char delimiter = ';', std::string data) {
+extractedChunks extractChunks(char delimiter = ';', string data) {
 	uint32 chunkStart = 0;
 	uint32 chunkEnd = 0;
 	extractedChunks extracted;
 	uint32 extracted.count = 0;
 	// TODO: try taking this length down as low as possible
-	string extracted.chunks[20];
+	std::array<string, 20> extracted.chunks;
 
 	auto saveChunk = [&]() {
 		uint32 length = chunkEnd - chunkStart;
@@ -128,6 +86,13 @@ extractedChunks extractChunks(char delimiter = ';', std::string data) {
 	return extracted;
 };
 
+struct Prop {
+	string propName;
+	EValueTypes propValueType;
+	std::vector<string> propValues;
+	bool isArray = false;
+};
+
 /**
  * 
  */
@@ -136,53 +101,83 @@ void FDecodeInstanceData(std::string encodedInstance) {
 	encodedInstance.erase(encodedInstance.begin());
 	extractedChunks instancePropsChunks = extractChunks(';', encodedInstance);
 
-	// Array of PropDescriptors
-	FPropDescriptor propValues[instancePropsChunks.count];
-
-	string propName;
-	string propValueType;
-	string propValues[20];
+	std::vector<Prop> instanceProps;
+	ESDTypes instanceType = static_cast<ESDTypes>(static_cast<int>(typeCode));
+	FTypeData<instanceType> instanceStruct;
 
 	for (int32 i = 0; i <= instancePropsChunks.count; i++) {
+		Prop prop;
+
 		string propChunk = instancePropsChunks[i];
 		extractedChunks propDescriptors = extractChunks(',', propChunk);
 
-		propName = propDescriptors.chunks[1];
-		propValueType = propDescriptors.chunks[0];
+		prop.propName = propDescriptors.chunks[1];
+		prop.propValueType = static_cast<EValueTypes>(static_cast<int>(propDescriptors.chunks[0]));
 
 		if (propDescriptors.count == 3) { // simple data
-			propValues[1] = propDescriptors.chunks[2];
+			prop.propValues[1] = propDescriptors.chunks[2];
 		}
 		else { // array
+			prop.isArray = true;
 			for (string i = 0; (i + 2) < propDescriptors.chunks.size(); ++i) {
-				propValues[i] = propDescriptors.chunks[i + 2];
+				prop.propValues[i] = propDescriptors.chunks[i + 2];
 			}
 		}
 
-		propValues[i].propName = 
+		instanceProps[i] = prop;
 	}
 
-	auto parsePropChunk = [](std:string propChunk) {
-		extractedChunks propDescriptorChunks = extractChunks(',', propChunk);
-		
-		if (propDescriptorChunks.count == 3) { // simple data
+	FSetInstance<instanceType, SIZE>(instanceStruct, instanceProps);
+};
 
+void FSetProperty(std::any& instanceProperty, string propName, std::vector<Prop>& properties) {
+	bool found = false;
+
+	auto GetValue = [](Prop& prop, uint32 i = 0) {
+		switch (prop.propValueType)
+		{
+		case EValueTypes::uint32:
+			return static_cast<uin32>(prop.propValues[i]);
+		case EValueTypes::int32:
+			return static_cast<in32>(prop.propValues[i]);
+		case EValueTypes::flt:
+			return static_cast<float>(prop.propValues[i]);
+		case EValueTypes::string:
+			return prop.propValues[i];
+		case EValueTypes::boolean:
+			return static_cast<bool>(prop.propValues[i]);
 		}
-		else { // array
+	};
 
+	for (Prop prop : properties) {
+		if (propName == prop.propName) {
+			found = true;
+			if (prop.isArray) {
+				for (uint32 i = 0; i < prop.propValues.size(); i++) {
+					instanceProperty[i] = GetValue(prop, i);
+				}
+			}
+			else {
+				instanceProperty = GetValue(prop, 0);
+			}
 		}
 	}
-
-	FSetInstance(static_cast<ESDTypes>(static_cast<int>(typeCode)), propChunks);
+	if (!found) {
+		// :(
+	}
 };
 
-
-void FSetInstance(ESDTypes type, string propChunks[]) {
-
+template<ESDTypes E>
+void FSetInstance(FTypeData<E>& inst, std::vector<Prop>& instanceProps) {};
+template<> void FSetInstance<ESDTypes::type1>(FTypeData<ESDTypes::type1>& inst, std::vector<Prop>& instanceProps) {
+	FSetProperty(inst.prop1, "prop1", instanceProps);
+	FSetProperty(inst.prop2, "prop2", instanceProps);
+	FSetProperty(inst.id, "id", instanceProps);
 };
-
-void FSetProperty(void* propPtr, string propName, std::string encodedData) {
-	// Compare types and names and throw in case of mismatch.
+template<> void FSetInstance<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, std::vector<Prop>& instanceProps) {
+	FSetProperty(inst.prop1, "prop1", instanceProps);
+	FSetProperty(inst.prop2, "prop2", instanceProps);
+	FSetProperty(inst.id, "id", instanceProps);
 };
 
 /**
