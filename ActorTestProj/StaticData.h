@@ -5,6 +5,8 @@
 #include <any>
 #include <vector>
 #include <array>
+#include <fstream>
+#include <sstream>
 #include "StaticData.generated.h"
 
 enum class EValueTypes {
@@ -44,17 +46,15 @@ struct FType2Data : public FBasicStruct {
 	int32 prop2;
 };
 
-void FGetRawStaticData() {
-	/**
-	 * Reads static data file line by line
-	 * 
-	 */
-}
+void FParseRawStaticData() {
+	std::ifstream infile("thefile.txt");
+	std::string line;
 
-template<ESDTypes E>
-void FSetEntityData(FTypeData<E>& e) { e.prop1; };
-template<> void FSetEntityData<ESDTypes::type1>() { return StaticData.type1; };
-template<> void FSetEntityData<ESDTypes::type2>() { return StaticData.type2; };
+	while (std::getline(infile, line))
+	{
+		FDecodeInstanceData(line);
+	}
+}
 
 struct extractedChunks {
 	std::vector<string> chunks;
@@ -127,7 +127,7 @@ void FDecodeInstanceData(std::string encodedInstance) {
 		instanceProps[i] = prop;
 	}
 
-	FSetInstance<instanceType, SIZE>(instanceStruct, instanceProps);
+	FSetInstance<instanceType>(instanceStruct, instanceProps);
 };
 
 void FSetProperty(std::any& instanceProperty, string propName, std::vector<Prop>& properties) {
@@ -173,11 +173,15 @@ template<> void FSetInstance<ESDTypes::type1>(FTypeData<ESDTypes::type1>& inst, 
 	FSetProperty(inst.prop1, "prop1", instanceProps);
 	FSetProperty(inst.prop2, "prop2", instanceProps);
 	FSetProperty(inst.id, "id", instanceProps);
+
+	StaticData.type1.Add(inst.id, inst);
 };
 template<> void FSetInstance<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, std::vector<Prop>& instanceProps) {
 	FSetProperty(inst.prop1, "prop1", instanceProps);
 	FSetProperty(inst.prop2, "prop2", instanceProps);
 	FSetProperty(inst.id, "id", instanceProps);
+
+	StaticData.type1.Add(inst.id, inst);
 };
 
 /**
@@ -186,6 +190,24 @@ template<> void FSetInstance<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, 
 void FEncodeInstanceData() {
 	
 };
+
+void SaveStaticData() {
+	std::ofstream myfile;
+	myfile.open("example.txt");
+	string line
+	for (int i = ESDTypes::type1; i != ESDTypes::type2; i++)
+	{
+		ESDTypes currentType = static_cast<ESDTypes>(static_cast<int>(typeCode));
+		TMap<uint32, FTypeData<currentType>> typeData = FSDManager::getTypeData<currentType>();
+
+		for () // for each instance
+		{
+			line = FEncodeInstanceData()
+		}
+	}
+	myfile << line << endl;
+	myfile.close();
+}
 
 void FSetInstanceOfType1() {
 	FTypeData<ESDTypes::type1> instance;
