@@ -7,22 +7,22 @@
 #include <array>
 #include <fstream>
 #include <sstream>
+#include "Misc/DefaultValueHelper.h"
 #include "StaticData.generated.h"
 
 enum class EValueTypes {
-	uint32 = 0 ,
-	int32,
+	int32 = 0 ,
 	flt,
 	string,
 	boolean,
 };
 
 struct FBasicStruct {
-	uint32 id;
+	int32 id;
 
 	void InitializeSefl() {};
 
-	friend uint32 GetTypeHash(const FBasicStruct& myStruct) {
+	friend int32 GetTypeHash(const FBasicStruct& myStruct) {
 		return myStruct.id;
 	}
 
@@ -33,14 +33,14 @@ struct FBasicStruct {
 };
 
 struct FType1Data : public FBasicStruct {
-	uint32 id;
+	int32 id;
 
 	int32 prop1;
 	int32 prop2;
 };
 
 struct FType2Data : public FBasicStruct {
-	uint32 id;
+	int32 id;
 
 	int32 prop1;
 	int32 prop2;
@@ -58,19 +58,19 @@ void FParseRawStaticData() {
 
 struct extractedChunks {
 	std::vector<std::string> chunks;
-	uint32 count;
+	int32 count;
 };
 
 extractedChunks extractChunks(char delimiter = ';', std::string data) {
-	uint32 chunkStart = 0;
-	uint32 chunkEnd = 0;
+	int32 chunkStart = 0;
+	int32 chunkEnd = 0;
 	extractedChunks extracted;
-	uint32 extracted.count = 0;
+	int32 extracted.count = 0;
 	// TODO: try taking this length down as low as possible
 	std::vector<std:string> extracted.chunks;
 
 	auto saveChunk = [&]() {
-		uint32 length = chunkEnd - chunkStart;
+		int32 length = chunkEnd - chunkStart;
 		extracted.chunks[extracted.count] = data.substr(chunkStart, length);
 		extracted.count++;
 	}
@@ -149,24 +149,80 @@ void FDecodeInstanceData(std::string encodedInstance) {
 	FSetInstance<instanceType>(instanceStruct, instanceProps);
 };
 
+FString castStdStringToFstring(std::string value) {
+	try
+	{
+		return FString(prop.value.c_str())
+	}
+	catch (Exception* e)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"s%\" to FString.", value));
+		return (FString)"0conversionError";
+	}
+};
+
+int32 castStdStringToInt32(std::string value) {
+	try
+	{
+		FString fstr = castStdStringToFstring(value);
+		int32 out;
+		FDefaultValueHelper::ParseInt(fstr, out);
+		return out;
+	}
+	catch (Exception* e)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"s%\" to int32.", value));
+		return 0;
+	}
+};
+
+float castStdStringToFloat(std::string value) {
+	try
+	{
+		std::string::size_type sz;   // alias of size_t
+		return std::stof(value, &sz);
+	}
+	catch (Exception* e)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"s%\" to float.", value));
+		return 0;
+	}
+};
+
+bool castStdStringToBool(std::string value) {
+	if (value == "0") {
+		return false;
+	}
+	else if (value == "1") {
+		return true;
+	}
+	else if (value == "true") {
+		return true;
+	}
+	else if (value == "false") {
+		return false;
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"s%\" to bool.", value));
+		return false;
+	}
+};
 
 
 void FSetProperty(std::any& instanceProperty, std::string propName, std::vector<Prop>& properties) {
 	bool found = false;
 
-	auto GetValue = [](Prop& prop, uint32 i = 0) {
+	auto GetValue = [](Prop& prop, int32 i = 0) {
 		switch (prop.propValueType)
 		{
-		case EValueTypes::uint32:
-			return static_cast<uin32>(prop.propValues[i]);
 		case EValueTypes::int32:
-			return static_cast<in32>(prop.propValues[i]);
+			return castStdStringToInt32(prop.propValues[i]);
 		case EValueTypes::flt:
-			return static_cast<float>(prop.propValues[i]);
+			return castStdStringToFloat(prop.propValues[i]);
 		case EValueTypes::string:
-			return FString(prop.propValues[i].c_str());
+			return castStdStringToFstring(prop.propValues[i]);
 		case EValueTypes::boolean:
-			return static_cast<bool>(prop.propValues[i]);
+			return castStdStringToBool(prop.propValues[i]);
 		}
 	};
 
@@ -174,7 +230,7 @@ void FSetProperty(std::any& instanceProperty, std::string propName, std::vector<
 		if (propName == prop.propName) {
 			found = true;
 			if (prop.isArray) {
-				for (uint32 i = 0; i < prop.propValues.size(); i++) {
+				for (int32 i = 0; i < prop.propValues.size(); i++) {
 					instanceProperty[i] = GetValue(prop, i);
 				}
 			}
@@ -184,7 +240,7 @@ void FSetProperty(std::any& instanceProperty, std::string propName, std::vector<
 		}
 	}
 	if (!found) {
-		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] !!! Prop of that name not found"));
+		UE_LOG(LogTemp, Warning, TEXT("---------> !!! Prop of that name not found"));
 		// :(
 	}
 };
@@ -196,7 +252,7 @@ template<> void FSetInstance<ESDTypes::type1>(FTypeData<ESDTypes::type1>& inst, 
 	FSetProperty(inst.prop2, "prop2", instanceProps);
 	FSetProperty(inst.id, "id", instanceProps);
 
-	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
+	UE_LOG(LogTemp, Warning, TEXT("---------> adding static data to map..."));
 	StaticData.type1.Add(inst.id, inst);
 };
 template<> void FSetInstance<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, std::vector<Prop>& instanceProps) {
@@ -204,7 +260,7 @@ template<> void FSetInstance<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, 
 	FSetProperty(inst.prop2, "prop2", instanceProps);
 	FSetProperty(inst.id, "id", instanceProps);
 
-	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
+	UE_LOG(LogTemp, Warning, TEXT("---------> adding static data to map..."));
 	StaticData.type1.Add(inst.id, inst);
 };
 
@@ -222,7 +278,7 @@ void SaveStaticData() {
 	for (int i = ESDTypes::type1; i != ESDTypes::type2; i++)
 	{
 		ESDTypes currentType = static_cast<ESDTypes>(static_cast<int>(typeCode));
-		TMap<uint32, FTypeData<currentType>> typeData = FSDManager::getTypeData<currentType>();
+		TMap<int32, FTypeData<currentType>> typeData = FSDManager::getTypeData<currentType>();
 
 		for () // for each instance
 		{
@@ -240,11 +296,11 @@ enum class ESDTypes {
 
 template<ESDTypes E>
 struct FTypeData {
-	/*uint32 id;
+	/*int32 id;
 
 	void InitializeSefl() {};
 
-	friend uint32 GetTypeHash(const FBasicStruct& myStruct) {
+	friend int32 GetTypeHash(const FBasicStruct& myStruct) {
 		return myStruct.id;
 	}
 
@@ -260,8 +316,8 @@ USTRUCT(BlueprintType)
 struct FStaticData {
 	GENERATED_BODY()
 
-	TMap<uint32, FTypeData<ESDTypes::type1>> type1;
-	TMap<uint32, FTypeData<ESDTypes::type2>> type2;
+	TMap<int32, FTypeData<ESDTypes::type1>> type1;
+	TMap<int32, FTypeData<ESDTypes::type2>> type2;
 
 	bool dataIsSet;
 };
@@ -275,22 +331,22 @@ public:
 	};
 
 	template<ESDTypes E>
-	static FTypeData<E>& getTypeInstanceData(uint32 instanceId) {
-		TMap<uint32, FTypeData<E>> typeData = getTypeData<E>();
+	static FTypeData<E>& getTypeInstanceData(int32 instanceId) {
+		TMap<int32, FTypeData<E>> typeData = getTypeData<E>();
 		bool hasInstance = typeData.Contains(instanceId);
 		if (!hasInstance) {
-			UE_LOG(LogTemp, Warning, TEXT("[MYLOG] There was no item"));
+			UE_LOG(LogTemp, Warning, TEXT("---------> There was no item"));
 		}
 		return typeData[instanceId];
 	};
 
 	template<ESDTypes E>
-	static TMap<uint32, FTypeData<E>> getTypeData() { return StaticData.type1; };
-	template<> static TMap<uint32, FTypeData<ESDTypes::type1>> getTypeData<ESDTypes::type1>() { return StaticData.type1; };
-	template<> static TMap<uint32, FTypeData<ESDTypes::type2>> getTypeData<ESDTypes::type2>() { return StaticData.type2; };
+	static TMap<int32, FTypeData<E>> getTypeData() { return StaticData.type1; };
+	template<> static TMap<int32, FTypeData<ESDTypes::type1>> getTypeData<ESDTypes::type1>() { return StaticData.type1; };
+	template<> static TMap<int32, FTypeData<ESDTypes::type2>> getTypeData<ESDTypes::type2>() { return StaticData.type2; };
 
 	static void FSetStaticData() {
-		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Running FSetStaticData"));
+		UE_LOG(LogTemp, Warning, TEXT("---------> Running FSetStaticData"));
 
 		FParseRawStaticData();
 
@@ -300,7 +356,7 @@ public:
 		//entity1type1.prop1 = 11;
 		//entity1type1.prop2 = 12;
 
-		//UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
+		//UE_LOG(LogTemp, Warning, TEXT("---------> adding static data to map..."));
 
 		//StaticData.type1.Add(entity1type1.id, entity1type1);
 
