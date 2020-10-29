@@ -17,10 +17,10 @@ class ACTORTESTPROJ_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionL
 	
 public:
 
-	UFUNCTION(BlueprintCallable, Category = "Static Data")
+	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
 	static FStaticData GetStaticData() {
 		return FSDManager::StaticData;
-	}
+	}*/
 
 	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
 	template<ESDTypes E>

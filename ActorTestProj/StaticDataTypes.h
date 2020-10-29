@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StaticDataCore.generated.h"
+#include "StaticDataTypes.generated.h"
 
 enum class EValueTypes {
 	int32 = 0,
