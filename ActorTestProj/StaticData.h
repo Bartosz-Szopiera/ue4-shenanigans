@@ -37,41 +37,47 @@
 std::string currentReadLine;
 std::ofstream currentSaveFile;
 
-// Or template with implicit type argument deduction
+void FSetValueFromString(std::string source, int32& target) { target = castStdStringToInt32(source); }
+void FSetValueFromString(std::string source, float& target) { target = castStdStringToFloat(source); }
+void FSetValueFromString(std::string source, FString& target) { target = castStdStringToFstring(source); }
+void FSetValueFromString(std::string source, bool& target) { target = castStdStringToBool(source); }
+
 template<class T>
 void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
+//void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
+	auto encodeValueInString = []() {
+		if (std::is_same<decltype(source), int32>::value) {
+			prop.propValueType = EValueTypes::int32;
+			fstr = FString::FromInt(source);
+			out = std::string(TCHAR_TO_UTF8(*fstr));
+		}
+		else if (std::is_same<decltype(source), float>::value) {
+			prop.propValueType = EValueTypes::flt;
+			fstr = FString::SanitizeFloat(source);
+			out = std::string(TCHAR_TO_UTF8(*fstr));
+		}
+		else if (std::is_same<decltype(source), FString>::value) {
+			prop.propValueType = EValueTypes::string;
+			out = std::string(TCHAR_TO_UTF8(*source));
+		}
+		else if (std::is_same<decltype(source), bool>::value) {
+			prop.propValueType = EValueTypes::boolean;
+			out = source ? "0" : "1";
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Instance property type not matching known value types."));
+		}
+		return out
+	};
 	if (action == EInstanceAction::toInstance) {
 		bool found = false;
-
-		auto GetValueFromString = [](FSDInstanceProp& prop, int32 i = 0) {
-			try {
-				switch (prop.propValueType)
-				{
-				case EValueTypes::int32:
-					if (!std::is_same<decltype(instanceProperty), int32>::value) throw;
-					return castStdStringToInt32(prop.propValues[i]);
-				case EValueTypes::flt:
-					if (!std::is_same<decltype(instanceProperty), float>::value) throw;
-					return castStdStringToFloat(prop.propValues[i]);
-				case EValueTypes::string:
-					if (!std::is_same<decltype(instanceProperty), FString>::value) throw;
-					return castStdStringToFstring(prop.propValues[i]);
-				case EValueTypes::boolean:
-					if (!std::is_same<decltype(instanceProperty), bool>::value) throw;
-					return castStdStringToBool(prop.propValues[i]);
-				}
-			}
-			catch () {
-				UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Encoded property type doesn't match declared instance property type."));
-			}
-		};
 
 		for (FSDInstanceProp prop : properties) {
 			if (propName == prop.propName) {
 				found = true;
 				if (prop.isArray) {
 					for (int32 i = 0; i < prop.propValues.size(); i++) {
-						instanceProperty[i] = GetValueFromString(prop, i);
+						SetValueFromString(prop, instanceProperty[i], i);
 					}
 				}
 				else {
@@ -80,7 +86,6 @@ void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FS
 			}
 		}
 		if (!found) {
-			//UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name: \"%s\" not found."), propName);
 			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name not found."));
 			// :(
 		}
@@ -90,7 +95,7 @@ void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FS
 		prop.propName = propName;
 
 		auto encodeValueInString = [](auto& source) {
-		std:string out;
+			std:string out;
 			FString fstr;
 			if (std::is_same<decltype(source), int32>::value) {
 				prop.propValueType = EValueTypes::int32;
