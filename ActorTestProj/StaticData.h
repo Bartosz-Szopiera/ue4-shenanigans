@@ -20,8 +20,6 @@ enum class EValueTypes {
 struct FBasicStruct {
 	int32 id;
 
-	void InitializeSefl() {};
-
 	friend int32 GetTypeHash(const FBasicStruct& myStruct) {
 		return myStruct.id;
 	}
@@ -86,7 +84,7 @@ extractedChunks extractChunks(char delimiter = ';', std::string data) {
 	return extracted;
 };
 
-struct Prop {
+struct FSDInstanceProp {
 	std::string propName;
 	EValueTypes propValueType;
 	std::vector<string> propValues;
@@ -121,12 +119,12 @@ void FDecodeInstanceData(std::string encodedInstance) {
 	encodedInstance.erase(encodedInstance.begin());
 	extractedChunks instancePropsChunks = extractChunks(';', encodedInstance);
 
-	std::vector<Prop> instanceProps;
+	std::vector<FSDInstanceProp> instanceProps;
 	ESDTypes instanceType = static_cast<ESDTypes>(static_cast<int>(typeCode));
 	FTypeData<instanceType> instanceStruct;
 
 	for (string propChunk : instancePropsChunks.chunks) {
-		Prop prop;
+		FSDInstanceProp prop;
 
 		extractedChunks propDescriptors = extractChunks(',', propChunk);
 
@@ -210,11 +208,11 @@ bool castStdStringToBool(std::string value) {
 };
 
 // Or template with implicit type argument deduction
-void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector<Prop>& properties, EInstanceAction action) {
+void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
 	if (action == EInstanceAction::toInstance) {
 		bool found = false;
 
-		auto GetValueFromString = [](Prop& prop, int32 i = 0) {
+		auto GetValueFromString = [](FSDInstanceProp& prop, int32 i = 0) {
 			try {
 				switch (prop.propValueType)
 				{
@@ -237,7 +235,7 @@ void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector
 			}
 		};
 
-		for (Prop prop : properties) {
+		for (FSDInstanceProp prop : properties) {
 			if (propName == prop.propName) {
 				found = true;
 				if (prop.isArray) {
@@ -256,7 +254,7 @@ void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector
 		}
 	}
 	else {
-		Prop prop;
+		FSDInstanceProp prop;
 		prop.propName = propName;
 
 		auto encodeValueInString = [](auto& source) {
@@ -279,6 +277,9 @@ void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector
 			else if (std::is_same<decltype(source), bool>::value) {
 				prop.propValueType = EValueTypes::boolean;
 				out = source ? "0" : "1";
+			}
+			else {
+				UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Instance property type not matching known value types."));
 			}
 			return out
 		};
@@ -305,7 +306,7 @@ enum class EInstanceAction {
 };
 
 typedef FTypeData A;
-typedef std::vector<Prop>& B;
+typedef std::vector<FSDInstanceProp>& B;
 typedef EInstanceAction C;
 template<ESDTypes E>
 void FSDInstanceAction(A<E>& inst, B instanceProps, C action) {};
@@ -328,27 +329,57 @@ template<> void FSDInstanceAction<ESDTypes::type2>(A<ESDTypes::type2>& inst, B i
 
 template<ESDTypes E>
 std::string FEncodeInstanceData(ESDTypes instType, FTypeData<E>& inst) {
-	std::vector<Prop> instProps;
+	std::vector<FSDInstanceProp> instProps;
 	FSDInstanceAction<instType>(inst, instProps, EInstanceAction::toString);
-	for (Prop prop : instProps) {
-		prop.
+
+	std::string encodedInstance;
+
+	std::char propDelimiter = ';';
+	std::char tokenDelimiter = ',';
+	string typeCode = std::to_string(static_cast<int>(instType));
+	string propName;
+
+	encodedInstance.append(typeCode);
+	encodedInstance.push_back(propDelimiter);
+
+	for (auto prop : instProps) {
+		encodedInstance.append(std::to_string(static_cast<int>(prop.propValueType)));
+		encodedInstance.push_back(tokenDelimiter);
+		encodedInstance.append(prop.propName);
+		encodedInstance.push_back(tokenDelimiter);
+
+		if (prop.isArray) {
+			encodedInstance.append("isArray");
+			encodedInstance.push_back(tokenDelimiter);
+
+			for (auto value : prop.propValues) {
+				encodedInstance.append(value);
+				encodedInstance.push_back(tokenDelimiter);
+			}
+		}
+		else {
+			encodedInstance.append(prop.propValues[0]);
+		}
+
+		encodedInstance.push_back(propDelimiter);
 	}
+
+	encodedInstance.push_back('\n');
 };
 
 void SaveStaticData() {
 	std::ofstream myfile;
 	myfile.open("example.txt");
-	std:string line;
+	std::string line;
 
 	for (int i = ESDTypes::type1; i != ESDTypes::type2; i++)
 	{
 		ESDTypes currentType = static_cast<ESDTypes>(static_cast<int>(i));
-		line = (std::string) i;
 		TMap<int32, FTypeData<currentType>> typeData = FSDManager::getTypeData<currentType>();
 
 		for (auto& inst : typeData)
 		{
-			line = FEncodeInstanceData(currentType, inst);
+			line.append(FEncodeInstanceData(currentType, inst));
 			myfile << line << endl;
 		}
 	}
