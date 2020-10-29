@@ -4,122 +4,12 @@
 
 #include <any>
 #include <vector>
-#include <array>
+#include <string>
 #include <fstream>
 #include <sstream>
+#include "StaticDataTypes.h"
+#include "StaticDataHelp.h"
 #include "Misc/DefaultValueHelper.h"
-#include "StaticData.generated.h"
-
-enum class EValueTypes {
-	int32 = 0 ,
-	flt,
-	string,
-	boolean,
-};
-
-enum class ESDTypes {
-	type1 = 0,
-	type2 = 1,
-};
-
-enum class EInstanceAction {
-	toString,
-	toInstance,
-};
-
-struct FType1Data {
-	int32 id;
-	int32 prop1;
-	int32 prop2;
-};
-
-struct FType2Data {
-	int32 id;
-	int32 prop1;
-	int32 prop2;
-};
-
-template<ESDTypes E>
-struct FTypeData {
-	int32 id;
-
-	friend int32 GetTypeHash(const FTypeData<E>& myStruct) {
-		return myStruct.id;
-	};
-
-	friend bool operator==(const FTypeData<E>& LHS, const FTypeData<E>& RHS)
-	{
-		return LHS.id == RHS.id;
-	};
-};
-template<> struct FTypeData<ESDTypes::type1> : public FType1Data {};
-template<> struct FTypeData<ESDTypes::type2> : public FType2Data {};
-
-struct FSDInstanceProp {
-	std::string propName;
-	EValueTypes propValueType;
-	std::vector<std::string> propValues;
-	bool isArray = false;
-};
-
-FString castStdStringToFstring(std::string value) {
-	try
-	{
-		return FString(value.c_str());
-	}
-	catch (const std::exception& exc)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"%s\" to FString. Exception:\n%s"), value, exc.what());
-		return (FString)"0conversionError";
-	}
-};
-
-int32 castStdStringToInt32(std::string value) {
-	try
-	{
-		FString fstr = castStdStringToFstring(value);
-		int32 out;
-		FDefaultValueHelper::ParseInt(fstr, out);
-		return out;
-	}
-	catch (const std::exception& exc)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"%s\" to int32. Exception:\n%s"), value, exc.what());
-		return 0;
-	}
-};
-
-float castStdStringToFloat(std::string value) {
-	try
-	{
-		std::string::size_type sz;   // alias of size_t
-		return std::stof(value, &sz);
-	}
-	catch (const std::exception& exc)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"%s\" to float. Exception:\n%s"), value, exc.what());
-		return 0;
-	}
-};
-
-bool castStdStringToBool(std::string value) {
-	if (value == "0") {
-		return false;
-	}
-	else if (value == "1") {
-		return true;
-	}
-	else if (value == "true") {
-		return true;
-	}
-	else if (value == "false") {
-		return false;
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"%s\" to bool."), value);
-		return false;
-	}
-};
 
 // Or template with implicit type argument deduction
 template<class T>
@@ -232,10 +122,7 @@ template<> void FSDInstanceAction<ESDTypes::type2>(FTypeData<ESDTypes::type2>& i
 	if (action == A::toInstance) StaticData.type2.Add(instanceStruct.id, instanceStruct);
 };
 
-struct extractedChunks {
-	std::vector<std::string> chunks;
-	int32 count;
-};
+
 
 extractedChunks extractChunks(std::string data, char delimiter = ';') {
 	int32 chunkStart = 0;
@@ -405,16 +292,6 @@ void SaveStaticData() {
 
 	myfile.close();
 }
-
-USTRUCT(BlueprintType)
-struct FStaticData {
-	GENERATED_BODY()
-
-	TMap<int32, FTypeData<ESDTypes::type1>> type1;
-	TMap<int32, FTypeData<ESDTypes::type2>> type2;
-
-	bool dataIsSet;
-};
 
 void FParseRawStaticData() {
 	std::ifstream infile("StaticData.txt");
