@@ -17,145 +17,59 @@ enum class EValueTypes {
 	boolean,
 };
 
-struct FBasicStruct {
+enum class ESDTypes {
+	type1 = 0,
+	type2 = 1,
+};
+
+enum class EInstanceAction {
+	toString,
+	toInstance,
+};
+
+struct FType1Data {
+	int32 id;
+	int32 prop1;
+	int32 prop2;
+};
+
+struct FType2Data {
+	int32 id;
+	int32 prop1;
+	int32 prop2;
+};
+
+template<ESDTypes E>
+struct FTypeData {
 	int32 id;
 
-	friend int32 GetTypeHash(const FBasicStruct& myStruct) {
+	friend int32 GetTypeHash(const FTypeData<E>& myStruct) {
 		return myStruct.id;
-	}
-
-	friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
-	{
-		return LHS.id == RHS.id;
-	}
-};
-
-struct FType1Data : public FBasicStruct {
-	int32 id;
-
-	int32 prop1;
-	int32 prop2;
-};
-
-struct FType2Data : public FBasicStruct {
-	int32 id;
-
-	int32 prop1;
-	int32 prop2;
-};
-
-void FParseRawStaticData() {
-	std::ifstream infile("thefile.txt");
-	std::string line;
-
-	while (std::getline(infile, line))
-	{
-		FDecodeInstanceData(line);
-	}
-}
-
-struct extractedChunks {
-	std::vector<std::string> chunks;
-	int32 count;
-};
-
-extractedChunks extractChunks(char delimiter = ';', std::string data) {
-	int32 chunkStart = 0;
-	int32 chunkEnd = 0;
-	extractedChunks extracted;
-	int32 extracted.count = 0;
-	// TODO: try taking this length down as low as possible
-	std::vector<std:string> extracted.chunks;
-
-	auto saveChunk = [&]() {
-		int32 length = chunkEnd - chunkStart;
-		extracted.chunks.push_back(data.substr(chunkStart, length));
-		extracted.count++;
-	}
-
-	for (char c : encodedInstance) {
-		if (c == delimiter) {
-			saveChunk();
-			chunkStart = chunkEnd;
-		}
-		chunkEnd++;
 	};
 
-	return extracted;
+	friend bool operator==(const FTypeData<E>& LHS, const FTypeData<E>& RHS)
+	{
+		return LHS.id == RHS.id;
+	};
 };
+template<> struct FTypeData<ESDTypes::type1> : public FType1Data {};
+template<> struct FTypeData<ESDTypes::type2> : public FType2Data {};
 
 struct FSDInstanceProp {
 	std::string propName;
 	EValueTypes propValueType;
-	std::vector<string> propValues;
+	std::vector<std::string> propValues;
 	bool isArray = false;
-};
-
-/**
-* 
- * Data formating example:
- * 
- * 0;0,prop1Name,1347;3,prop2Name,isArray,textValue1,textValue2;\n
- * 
- * ; - delimiter
- * 
- * 0 - first zero - it's numerical value of type according to ESDTypes
- * 
- * ;0,prop1Name,1347; - this is first property
- *		0			- numerical value of type of value held according to EValueTypes
- *		prop1Name	- property name
- *		1347		- value
- * 
- * ;3,prop2Name,,textValue1,textValue2; - second property which is an array
- *		3			- numerical code for the value type
- *		prop2Name	- property name
- *		isArr		- this value is not used for anything but gives one more chunk that allows
- *						to identify series of chunks as an encoding of array-holding prop
- *		textValue1	- first of series of subsequent values the array is holding
- * 
- */
-void FDecodeInstanceData(std::string encodedInstance) {
-	int32 typeCode = encodedInstance[0];
-	encodedInstance.erase(encodedInstance.begin());
-	extractedChunks instancePropsChunks = extractChunks(';', encodedInstance);
-
-	std::vector<FSDInstanceProp> instanceProps;
-	ESDTypes instanceType = static_cast<ESDTypes>(static_cast<int>(typeCode));
-	FTypeData<instanceType> instanceStruct;
-
-	for (string propChunk : instancePropsChunks.chunks) {
-		FSDInstanceProp prop;
-
-		extractedChunks propDescriptors = extractChunks(',', propChunk);
-
-		prop.propName = propDescriptors.chunks[1];
-		prop.propValueType = static_cast<EValueTypes>(static_cast<int>(propDescriptors.chunks[0]));
-
-		if (propDescriptors.count == 3) { // simple data
-			prop.propValues.push_back(propDescriptors.chunks[2]);
-			prop.propValues[1] = propDescriptors.chunks[2];
-		}
-		else { // array
-			prop.isArray = true;
-			for (std::string i = 0; (i + 3) < propDescriptors.chunks.size(); ++i) {
-				prop.propValues[i] = propDescriptors.chunks[i + 3];
-			}
-		}
-
-		instanceProps.push_back(prop)
-	}
-
-	FSDInstanceAction<instanceType>(instanceStruct, instanceProps, EInstanceAction::toInstance);
 };
 
 FString castStdStringToFstring(std::string value) {
 	try
 	{
-		return FString(prop.value.c_str())
+		return FString(value.c_str());
 	}
-	catch (Exception* e)
+	catch (const std::exception& exc)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"s%\" to FString.", value));
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"%s\" to FString. Exception:\n%s"), value, exc.what());
 		return (FString)"0conversionError";
 	}
 };
@@ -168,9 +82,9 @@ int32 castStdStringToInt32(std::string value) {
 		FDefaultValueHelper::ParseInt(fstr, out);
 		return out;
 	}
-	catch (Exception* e)
+	catch (const std::exception& exc)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"s%\" to int32.", value));
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"%s\" to int32. Exception:\n%s"), value, exc.what());
 		return 0;
 	}
 };
@@ -181,9 +95,9 @@ float castStdStringToFloat(std::string value) {
 		std::string::size_type sz;   // alias of size_t
 		return std::stof(value, &sz);
 	}
-	catch (Exception* e)
+	catch (const std::exception& exc)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"s%\" to float.", value));
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"%s\" to float. Exception:\n%s"), value, exc.what());
 		return 0;
 	}
 };
@@ -202,13 +116,14 @@ bool castStdStringToBool(std::string value) {
 		return false;
 	}
 	else {
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"s%\" to bool.", value));
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting \"%s\" to bool."), value);
 		return false;
 	}
 };
 
 // Or template with implicit type argument deduction
-void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
+template<class T>
+void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
 	if (action == EInstanceAction::toInstance) {
 		bool found = false;
 
@@ -249,7 +164,7 @@ void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector
 			}
 		}
 		if (!found) {
-			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name: \"s%\" not found.", propName));
+			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name: \"%s\" not found."), propName);
 			// :(
 		}
 	}
@@ -258,7 +173,7 @@ void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector
 		prop.propName = propName;
 
 		auto encodeValueInString = [](auto& source) {
-			std:string out;
+		std:string out;
 			FString fstr;
 			if (std::is_same<decltype(source), int32>::value) {
 				prop.propValueType = EValueTypes::int32;
@@ -300,31 +215,135 @@ void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector
 	};
 };
 
-enum class EInstanceAction {
-	toString,
-	toInstance,
-};
-
-typedef FTypeData A;
-typedef std::vector<FSDInstanceProp>& B;
-typedef EInstanceAction C;
+typedef std::vector<FSDInstanceProp>& P;
+typedef EInstanceAction A;
 template<ESDTypes E>
-void FSDInstanceAction(A<E>& inst, B instanceProps, C action) {};
-template<> void FSDInstanceAction<ESDTypes::type1>(A<ESDTypes::type1>& inst, B instProps, C action) {
+void FSDInstanceAction(FTypeData<E>& inst, P instanceProps, A action) {};
+template<> void FSDInstanceAction<ESDTypes::type1>(FTypeData<ESDTypes::type1>& inst, P instProps, A action) {
 	FSDPropertyAction(inst.prop1, "prop1", instProps, action);
 	FSDPropertyAction(inst.prop2, "prop2", instProps, action);
 	FSDPropertyAction(inst.id, "id", instProps, action);
-
-	UE_LOG(LogTemp, Warning, TEXT("---------> Adding instance data to map..."));
-	StaticData.type1.Add(inst.id, inst);
+	if (action == A::toInstance) StaticData.type1.Add(instanceStruct.id, instanceStruct);
 };
-template<> void FSDInstanceAction<ESDTypes::type2>(A<ESDTypes::type2>& inst, B instProps, C action) {
+template<> void FSDInstanceAction<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, P instProps, A action) {
 	FSDPropertyAction(inst.prop1, "prop1", instProps, action);
 	FSDPropertyAction(inst.prop2, "prop2", instProps, action);
 	FSDPropertyAction(inst.id, "id", instProps, action);
+	if (action == A::toInstance) StaticData.type2.Add(instanceStruct.id, instanceStruct);
+};
 
-	UE_LOG(LogTemp, Warning, TEXT("---------> Adding instance data to map..."));
-	StaticData.type1.Add(inst.id, inst);
+struct extractedChunks {
+	std::vector<std::string> chunks;
+	int32 count;
+};
+
+extractedChunks extractChunks(std::string data, char delimiter = ';') {
+	int32 chunkStart = 0;
+	int32 chunkEnd = 0;
+	extractedChunks extracted;
+	extracted.count = 0;
+
+	auto saveChunk = [&]() {
+		int32 length = chunkEnd - chunkStart;
+		extracted.chunks.push_back(data.substr(chunkStart, length));
+		extracted.count++;
+	};
+
+	for (char c : data) {
+		if (c == delimiter) {
+			saveChunk();
+			chunkStart = chunkEnd;
+		}
+		chunkEnd++;
+	};
+
+	return extracted;
+};
+
+enum class ESDSpecializations {
+	createStaticData,
+};
+
+template<ESDTypes E>
+void FSDSpecializedCall(ESDSpecializations spec) {
+	if (spec == ESDSpecializations::createStaticData) {
+		FTypeData<E> instanceStruct;
+		std::vector<FSDInstanceProp> instanceProps = FDecodeInstanceData();
+		FSDInstanceAction<E>(instanceStruct, instanceProps, EInstanceAction::toInstance)
+		UE_LOG(LogTemp, Warning, TEXT("---------> Adding instance data to map..."));
+	}
+}
+
+void FSDSpecializationJuncture(ESDTypes type, ESDSpecializations spec) {
+	if (type == ESDTypes::type1) {
+		FSDSpecializedCall<ESDTypes::type1>(spec);
+	}
+	else if (type == ESDTypes::type2) {
+		FSDSpecializedCall<ESDTypes::type2>(spec);
+	}
+}
+
+/**
+* 
+ * Data formating example:
+ * 
+ * 0;0,prop1Name,1347;3,prop2Name,isArray,textValue1,textValue2;\n
+ * 
+ * ; - delimiter
+ * 
+ * 0 - first zero - it's numerical value of type according to ESDTypes
+ * 
+ * ;0,prop1Name,1347; - this is first property
+ *		0			- numerical value of type of value held according to EValueTypes
+ *		prop1Name	- property name
+ *		1347		- value
+ * 
+ * ;3,prop2Name,,textValue1,textValue2; - second property which is an array
+ *		3			- numerical code for the value type
+ *		prop2Name	- property name
+ *		isArr		- this value is not used for anything but gives one more chunk that allows
+ *						to identify series of chunks as an encoding of array-holding prop
+ *		textValue1	- first of series of subsequent values the array is holding
+ * 
+ */
+void FCreateStaticData(int typeCode) {
+	if (typeCode == static_cast<int>(ESDTypes::type1)) {
+		FSDSpecializationJuncture(ESDTypes::type1, ESDSpecializations::createStaticData);
+	}
+	else if (typeCode == static_cast<int>(ESDTypes::type2)) {
+		FSDSpecializationJuncture(ESDTypes::type2, ESDSpecializations::createStaticData);
+	}
+}
+
+std::vector<FSDInstanceProp> FDecodeInstanceData(std::string encodedInstance) {
+	encodedInstance.erase(encodedInstance.begin());
+	extractedChunks instancePropsChunks = extractChunks(encodedInstance);
+
+	std::vector<FSDInstanceProp> instanceProps;
+
+	for (string propChunk : instancePropsChunks.chunks) {
+		FSDInstanceProp prop;
+
+		extractedChunks propDescriptors = extractChunks(propChunk, ',');
+
+		prop.propName = propDescriptors.chunks[1];
+		prop.propValueType = static_cast<EValueTypes>(static_cast<int>(propDescriptors.chunks[0]));
+
+		if (propDescriptors.count == 3) { // simple data
+			prop.propValues.push_back(propDescriptors.chunks[2]);
+			prop.propValues[1] = propDescriptors.chunks[2];
+		}
+		else { // array
+			prop.isArray = true;
+			for (std::string i = 0; (i + 3) < propDescriptors.chunks.size(); ++i) {
+				prop.propValues[i] = propDescriptors.chunks[i + 3];
+			}
+		}
+
+		instanceProps.push_back(prop);
+	}
+
+	return instanceProps
 };
 
 template<ESDTypes E>
@@ -387,29 +406,6 @@ void SaveStaticData() {
 	myfile.close();
 }
 
-enum class ESDTypes {
-	type1 = 0,
-	type2 = 1,
-};
-
-template<ESDTypes E>
-struct FTypeData {
-	/*int32 id;
-
-	void InitializeSefl() {};
-
-	friend int32 GetTypeHash(const FBasicStruct& myStruct) {
-		return myStruct.id;
-	}
-
-	friend bool operator==(const FBasicStruct& LHS, const FBasicStruct& RHS)
-	{
-		return LHS.id == RHS.id;
-	}*/
-};
-template<> struct FTypeData<ESDTypes::type1> : public FType1Data {};
-template<> struct FTypeData<ESDTypes::type2> : public FType2Data {};
-
 USTRUCT(BlueprintType)
 struct FStaticData {
 	GENERATED_BODY()
@@ -419,6 +415,17 @@ struct FStaticData {
 
 	bool dataIsSet;
 };
+
+void FParseRawStaticData() {
+	std::ifstream infile("StaticData.txt");
+	std::string line;
+
+	while (std::getline(infile, line))
+	{
+		int typeCode = static_cast<int>(line[0]);
+		FCreateStaticData(typeCode);
+	}
+}
 
 class FSDManager {
 public:
@@ -446,7 +453,7 @@ public:
 	static void FSetStaticData() {
 		UE_LOG(LogTemp, Warning, TEXT("---------> Running FSetStaticData"));
 
-		//FParseRawStaticData();
+		FParseRawStaticData();
 
 		// type1
 		//FTypeData<ESDTypes::type1> entity1type1;
