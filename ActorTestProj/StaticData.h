@@ -57,17 +57,17 @@ void FParseRawStaticData() {
 }
 
 struct extractedChunks {
-	std::vector<string> chunks;
+	std::vector<std::string> chunks;
 	uint32 count;
 };
 
-extractedChunks extractChunks(char delimiter = ';', string data) {
+extractedChunks extractChunks(char delimiter = ';', std::string data) {
 	uint32 chunkStart = 0;
 	uint32 chunkEnd = 0;
 	extractedChunks extracted;
 	uint32 extracted.count = 0;
 	// TODO: try taking this length down as low as possible
-	std::array<string, 20> extracted.chunks;
+	std::vector<std:string> extracted.chunks;
 
 	auto saveChunk = [&]() {
 		uint32 length = chunkEnd - chunkStart;
@@ -76,7 +76,7 @@ extractedChunks extractChunks(char delimiter = ';', string data) {
 	}
 
 	for (char c : encodedInstance) {
-		if (c == delimiter || c == '\n') {
+		if (c == delimiter) {
 			saveChunk();
 			chunkStart = chunkEnd;
 		}
@@ -87,14 +87,33 @@ extractedChunks extractChunks(char delimiter = ';', string data) {
 };
 
 struct Prop {
-	string propName;
+	std::string propName;
 	EValueTypes propValueType;
 	std::vector<string> propValues;
 	bool isArray = false;
 };
 
 /**
+* 
+ * Example data format:
  * 
+ * 0;0,prop1Name,1347;3,prop2Name,isArray,textValue1,textValue2;\n
+ * 
+ * ; - delimiter
+ * 
+ * 0 - first zero - it's numerical value of type according to ESDTypes
+ * 
+ * ;0,prop1Name,1347; - this is first property
+ *		0			- numerical value of type of value held according to EValueTypes
+ *		prop1Name	- property name
+ *		1347		- value
+ * 
+ * ;3,prop2Name,,textValue1,textValue2; - second property which is an array
+ *		3			- numerical code for the value type
+ *		prop2Name	- property name
+ *		isArr		- this value is not used for anything but gives one more chunk that allows
+ *						to identify series of chunks as an encoding of array-holding prop
+ *		textValue1	- first of series of subsequent values the array is holding
  */
 void FDecodeInstanceData(std::string encodedInstance) {
 	int32 typeCode = encodedInstance[0];
@@ -119,8 +138,8 @@ void FDecodeInstanceData(std::string encodedInstance) {
 		}
 		else { // array
 			prop.isArray = true;
-			for (string i = 0; (i + 2) < propDescriptors.chunks.size(); ++i) {
-				prop.propValues[i] = propDescriptors.chunks[i + 2];
+			for (std::string i = 0; (i + 3) < propDescriptors.chunks.size(); ++i) {
+				prop.propValues[i] = propDescriptors.chunks[i + 3];
 			}
 		}
 
@@ -130,7 +149,9 @@ void FDecodeInstanceData(std::string encodedInstance) {
 	FSetInstance<instanceType>(instanceStruct, instanceProps);
 };
 
-void FSetProperty(std::any& instanceProperty, string propName, std::vector<Prop>& properties) {
+
+
+void FSetProperty(std::any& instanceProperty, std::string propName, std::vector<Prop>& properties) {
 	bool found = false;
 
 	auto GetValue = [](Prop& prop, uint32 i = 0) {
@@ -143,7 +164,7 @@ void FSetProperty(std::any& instanceProperty, string propName, std::vector<Prop>
 		case EValueTypes::flt:
 			return static_cast<float>(prop.propValues[i]);
 		case EValueTypes::string:
-			return prop.propValues[i];
+			return FString(prop.propValues[i].c_str());
 		case EValueTypes::boolean:
 			return static_cast<bool>(prop.propValues[i]);
 		}
@@ -163,6 +184,7 @@ void FSetProperty(std::any& instanceProperty, string propName, std::vector<Prop>
 		}
 	}
 	if (!found) {
+		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] !!! Prop of that name not found"));
 		// :(
 	}
 };
@@ -174,6 +196,7 @@ template<> void FSetInstance<ESDTypes::type1>(FTypeData<ESDTypes::type1>& inst, 
 	FSetProperty(inst.prop2, "prop2", instanceProps);
 	FSetProperty(inst.id, "id", instanceProps);
 
+	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
 	StaticData.type1.Add(inst.id, inst);
 };
 template<> void FSetInstance<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, std::vector<Prop>& instanceProps) {
@@ -181,6 +204,7 @@ template<> void FSetInstance<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, 
 	FSetProperty(inst.prop2, "prop2", instanceProps);
 	FSetProperty(inst.id, "id", instanceProps);
 
+	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
 	StaticData.type1.Add(inst.id, inst);
 };
 
@@ -208,36 +232,6 @@ void SaveStaticData() {
 	myfile << line << endl;
 	myfile.close();
 }
-
-void FSetInstanceOfType1() {
-	FTypeData<ESDTypes::type1> instance;
-	FSetProperty(&instance.prop1, "prop1", )
-
-	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
-	StaticData.type1.Add(instance.id, instance);
-}
-
-void FInitializeStaticData() {
-
-	switch (ESDTypes)
-	{
-	case ESDTypes::type1:
-		break;
-	case ESDTypes::type2:
-
-	}
-	FTypeData<ESDTypes::type1>
-
-	FTypeData<ESDTypes::type1> entity1type1;
-	entity1type1.id = 1;
-	entity1type1.prop1 = 11;
-	entity1type1.prop2 = 12;
-
-	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
-
-	StaticData.type1.Add(entity1type1.id, entity1type1);
-
-};
 
 enum class ESDTypes {
 	type1 = 0,
@@ -297,26 +291,29 @@ public:
 
 	static void FSetStaticData() {
 		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] Running FSetStaticData"));
+
+		FParseRawStaticData();
+
 		// type1
-		FTypeData<ESDTypes::type1> entity1type1;
-		entity1type1.id = 1;
-		entity1type1.prop1 = 11;
-		entity1type1.prop2 = 12;
+		//FTypeData<ESDTypes::type1> entity1type1;
+		//entity1type1.id = 1;
+		//entity1type1.prop1 = 11;
+		//entity1type1.prop2 = 12;
 
-		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
+		//UE_LOG(LogTemp, Warning, TEXT("[MYLOG] adding static data to map..."));
 
-		StaticData.type1.Add(entity1type1.id, entity1type1);
+		//StaticData.type1.Add(entity1type1.id, entity1type1);
 
-		// type2
-		FTypeData<ESDTypes::type2> entity1type2;
-		entity1type1.id = 21;
-		entity1type1.prop1 = 21;
-		entity1type1.prop2 = 22;
+		//// type2
+		//FTypeData<ESDTypes::type2> entity1type2;
+		//entity1type1.id = 21;
+		//entity1type1.prop1 = 21;
+		//entity1type1.prop2 = 22;
 
-		StaticData.type2.Add(entity1type2.id, entity1type2);
+		//StaticData.type2.Add(entity1type2.id, entity1type2);
 
-		// Wrapping up
-		StaticData.dataIsSet = true;
-		//return FSDManager::StaticData;
+		//// Wrapping up
+		//StaticData.dataIsSet = true;
+		////return FSDManager::StaticData;
 	}
 };
