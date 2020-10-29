@@ -208,59 +208,72 @@ bool castStdStringToBool(std::string value) {
 	}
 };
 
+// Or template with implicit type argument deduction
+void FSDPropertyAction(auto instanceProperty, std::string propName, std::vector<Prop>& properties, EInstanceAction action) {
+	if (action == EInstanceAction::set) {
+		bool found = false;
 
-void FSetProperty(std::any& instanceProperty, std::string propName, std::vector<Prop>& properties) {
-	bool found = false;
+		auto GetValue = [](Prop& prop, int32 i = 0) {
+			switch (prop.propValueType)
+			{
+			case EValueTypes::int32:
+				return castStdStringToInt32(prop.propValues[i]);
+			case EValueTypes::flt:
+				return castStdStringToFloat(prop.propValues[i]);
+			case EValueTypes::string:
+				return castStdStringToFstring(prop.propValues[i]);
+			case EValueTypes::boolean:
+				return castStdStringToBool(prop.propValues[i]);
+			}
+		};
 
-	auto GetValue = [](Prop& prop, int32 i = 0) {
-		switch (prop.propValueType)
-		{
-		case EValueTypes::int32:
-			return castStdStringToInt32(prop.propValues[i]);
-		case EValueTypes::flt:
-			return castStdStringToFloat(prop.propValues[i]);
-		case EValueTypes::string:
-			return castStdStringToFstring(prop.propValues[i]);
-		case EValueTypes::boolean:
-			return castStdStringToBool(prop.propValues[i]);
-		}
-	};
-
-	for (Prop prop : properties) {
-		if (propName == prop.propName) {
-			found = true;
-			if (prop.isArray) {
-				for (int32 i = 0; i < prop.propValues.size(); i++) {
-					instanceProperty[i] = GetValue(prop, i);
+		for (Prop prop : properties) {
+			if (propName == prop.propName) {
+				found = true;
+				if (prop.isArray) {
+					for (int32 i = 0; i < prop.propValues.size(); i++) {
+						instanceProperty[i] = GetValue(prop, i);
+					}
+				}
+				else {
+					instanceProperty = GetValue(prop, 0);
 				}
 			}
-			else {
-				instanceProperty = GetValue(prop, 0);
-			}
+		}
+		if (!found) {
+			UE_LOG(LogTemp, Warning, TEXT("---------> !!! Prop of that name not found"));
+			// :(
 		}
 	}
-	if (!found) {
-		UE_LOG(LogTemp, Warning, TEXT("---------> !!! Prop of that name not found"));
-		// :(
+	else {
+
 	}
 };
 
-template<ESDTypes E>
-void FSetInstance(FTypeData<E>& inst, std::vector<Prop>& instanceProps) {};
-template<> void FSetInstance<ESDTypes::type1>(FTypeData<ESDTypes::type1>& inst, std::vector<Prop>& instanceProps) {
-	FSetProperty(inst.prop1, "prop1", instanceProps);
-	FSetProperty(inst.prop2, "prop2", instanceProps);
-	FSetProperty(inst.id, "id", instanceProps);
+enum class EInstanceAction {
+	get,
+	set,
+};
 
-	UE_LOG(LogTemp, Warning, TEXT("---------> adding static data to map..."));
+typedef FTypeData A;
+typedef std::vector<Prop>& B;
+typedef EInstanceAction C;
+template<ESDTypes E>
+void FSDInstanceAction(A<E>& inst, B instanceProps, C action) {};
+template<> void FSDInstanceAction<ESDTypes::type1>(A<ESDTypes::type1>& inst, B instProps, C action) {
+	FSDPropertyAction(inst.prop1, "prop1", instProps, action);
+	FSDPropertyAction(inst.prop2, "prop2", instProps, action);
+	FSDPropertyAction(inst.id, "id", instProps, action);
+
+	UE_LOG(LogTemp, Warning, TEXT("---------> Adding instance data to map..."));
 	StaticData.type1.Add(inst.id, inst);
 };
-template<> void FSetInstance<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, std::vector<Prop>& instanceProps) {
-	FSetProperty(inst.prop1, "prop1", instanceProps);
-	FSetProperty(inst.prop2, "prop2", instanceProps);
-	FSetProperty(inst.id, "id", instanceProps);
+template<> void FSDInstanceAction<ESDTypes::type2>(A<ESDTypes::type2>& inst, B instProps, C action) {
+	FSDPropertyAction(inst.prop1, "prop1", instProps, action);
+	FSDPropertyAction(inst.prop2, "prop2", instProps, action);
+	FSDPropertyAction(inst.id, "id", instProps, action);
 
-	UE_LOG(LogTemp, Warning, TEXT("---------> adding static data to map..."));
+	UE_LOG(LogTemp, Warning, TEXT("---------> Adding instance data to map..."));
 	StaticData.type1.Add(inst.id, inst);
 };
 
@@ -274,18 +287,20 @@ void FEncodeInstanceData() {
 void SaveStaticData() {
 	std::ofstream myfile;
 	myfile.open("example.txt");
-	string line
+	std:string line;
+
 	for (int i = ESDTypes::type1; i != ESDTypes::type2; i++)
 	{
 		ESDTypes currentType = static_cast<ESDTypes>(static_cast<int>(typeCode));
 		TMap<int32, FTypeData<currentType>> typeData = FSDManager::getTypeData<currentType>();
 
-		for () // for each instance
+		for (auto& inst : typeData)
 		{
-			line = FEncodeInstanceData()
+			line = FEncodeInstanceData(inst);
+			myfile << line << endl;
 		}
 	}
-	myfile << line << endl;
+
 	myfile.close();
 }
 
@@ -348,7 +363,7 @@ public:
 	static void FSetStaticData() {
 		UE_LOG(LogTemp, Warning, TEXT("---------> Running FSetStaticData"));
 
-		FParseRawStaticData();
+		//FParseRawStaticData();
 
 		// type1
 		//FTypeData<ESDTypes::type1> entity1type1;
