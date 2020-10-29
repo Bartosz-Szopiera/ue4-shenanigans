@@ -37,53 +37,59 @@
 std::string currentReadLine;
 std::ofstream currentSaveFile;
 
-int32 FGetValueFromString(std::string source, int32& target) { return castStdStringToInt32(source); }
-float FGetValueFromString(std::string source, float& target) { return castStdStringToFloat(source); }
-FString FGetValueFromString(std::string source, FString& target) { return castStdStringToFstring(source); }
-bool FGetValueFromString(std::string source, bool& target) { return castStdStringToBool(source); }
+template<class T>
+T FGetValueFromString(std::string source) { return castStdStringToInt32(source); };
+template<>
+int32 FGetValueFromString<int32>(std::string source) { return castStdStringToInt32(source); };
+template<>
+float FGetValueFromString<float>(std::string source) { return castStdStringToFloat(source); };
+template<>
+FString FGetValueFromString<FString>(std::string source) { return castStdStringToFstring(source); };
+template<>
+bool FGetValueFromString<bool>(std::string source) { return castStdStringToBool(source); };
 
-std::string FGetStringFromValue(int32& source, std::string target) { return castInt32ToStdString(source); }
-std::string FGetStringFromValue(float& source, std::string target) { return castFloatToStdString(source); }
-std::string FGetStringFromValue(FString& source, std::string target) { return castFstringToStdString(source); }
-std::string FGetStringFromValue(bool& source, std::string target) { return castBoolToStdString(source); }
+std::string FGetStringFromValue(int32 source) { return castInt32ToStdString(source); };
+std::string FGetStringFromValue(float source) { return castFloatToStdString(source); };
+std::string FGetStringFromValue(FString source) { return castFstringToStdString(*source); };
+std::string FGetStringFromValue(bool source) { return castBoolToStdString(source); };
+
+template<class T>
+EValueTypes FGetValueTypeFromInstProp() { return EValueTypes::int32; };
+template<>
+EValueTypes FGetValueTypeFromInstProp<int32>() { return EValueTypes::int32; };
+template<>
+EValueTypes FGetValueTypeFromInstProp<float>() { return EValueTypes::flt; };
+template<>
+EValueTypes FGetValueTypeFromInstProp<FString>() { return EValueTypes::string; };
+template<>
+EValueTypes FGetValueTypeFromInstProp<bool>() { return EValueTypes::boolean; };
+
+template<class T>
+void FSetInstanceProperty(TArray<T>& instanceProperty, T value) { instanceProperty.Append(value); };
+void FSetInstanceProperty(int32& instanceProperty, int32 value) { instanceProperty = value; };
+void FSetInstanceProperty(float& instanceProperty, float value) { instanceProperty = value; };
+void FSetInstanceProperty(FString& instanceProperty, FString value) { instanceProperty = value; };
+void FSetInstanceProperty(bool& instanceProperty, bool value) { instanceProperty = value; };
 
 template<class T>
 void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
 	if (action == EInstanceAction::toInstance) {
-		bool found = false;
-
 		for (FSDInstanceProp prop : properties) {
 			if (propName == prop.propName) {
-				found = true;
-				decltype(instanceProperty)::value_type newItem;
-				FSetValueFromString(prop.propValues, newItem);
-				instanceProperty.push_back(newItem);
+				for (int32 i = 0; i < prop.propValues.size(); i++) {
+					instanceProperty.push_back(FGetValueFromString<T>(prop.propValues[i]));
+				}
+				return;
 			}
 		}
-		if (!found) {
-			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name not found."));
-		}
+		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name not found."));
 	}
 	else if (action == EInstanceAction::toString) {
 		FSDInstanceProp prop;
 		prop.propName = propName;
 		prop.isArray = true;
 
-		if (std::is_same<decltype(instanceProperty)::value_type, int32>::value) {
-			prop.propValueType = EValueTypes::int32;
-		}
-		else if (std::is_same<decltype(instanceProperty)::value_type, float>::value) {
-			prop.propValueType = EValueTypes::flt;
-		}
-		else if (std::is_same<decltype(instanceProperty)::value_type, FString>::value) {
-			prop.propValueType = EValueTypes::string;
-		}
-		else if (std::is_same<decltype(instanceProperty)::value_type, bool>::value) {
-			prop.propValueType = EValueTypes::boolean;
-		}
-		else {
-			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Instance property type not matching known value types."));
-		}
+		prop.propValueType = FGetValueTypeFromInstProp<T>();
 
 		std::string newItem;
 		for (T& value : instanceProperty)
@@ -96,7 +102,7 @@ void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FS
 	};
 };
 template<class T>
-void FSDPropertyAction(TArray<T>& instanceProperty, std::string propName, std::vector<FSDInstanceProp> & properties, EInstanceAction action) {
+void FSDPropertyAction(TArray<T>& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
 	if (action == EInstanceAction::toInstance) {
 		bool found = false;
 
