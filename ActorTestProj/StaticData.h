@@ -71,7 +71,7 @@ extractedChunks extractChunks(char delimiter = ';', std::string data) {
 
 	auto saveChunk = [&]() {
 		int32 length = chunkEnd - chunkStart;
-		extracted.chunks[extracted.count] = data.substr(chunkStart, length);
+		extracted.chunks.push_back(data.substr(chunkStart, length));
 		extracted.count++;
 	}
 
@@ -125,16 +125,16 @@ void FDecodeInstanceData(std::string encodedInstance) {
 	ESDTypes instanceType = static_cast<ESDTypes>(static_cast<int>(typeCode));
 	FTypeData<instanceType> instanceStruct;
 
-	for (int32 i = 0; i <= instancePropsChunks.count; i++) {
+	for (string propChunk : instancePropsChunks.chunks) {
 		Prop prop;
 
-		string propChunk = instancePropsChunks[i];
 		extractedChunks propDescriptors = extractChunks(',', propChunk);
 
 		prop.propName = propDescriptors.chunks[1];
 		prop.propValueType = static_cast<EValueTypes>(static_cast<int>(propDescriptors.chunks[0]));
 
 		if (propDescriptors.count == 3) { // simple data
+			prop.propValues.push_back(propDescriptors.chunks[2]);
 			prop.propValues[1] = propDescriptors.chunks[2];
 		}
 		else { // array
@@ -144,10 +144,10 @@ void FDecodeInstanceData(std::string encodedInstance) {
 			}
 		}
 
-		instanceProps[i] = prop;
+		instanceProps.push_back(prop)
 	}
 
-	FSetInstance<instanceType>(instanceStruct, instanceProps);
+	FSDInstanceAction<instanceType>(instanceStruct, instanceProps, EInstanceAction::toInstance);
 };
 
 FString castStdStringToFstring(std::string value) {
@@ -211,7 +211,7 @@ bool castStdStringToBool(std::string value) {
 
 // Or template with implicit type argument deduction
 void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector<Prop>& properties, EInstanceAction action) {
-	if (action == EInstanceAction::set) {
+	if (action == EInstanceAction::toInstance) {
 		bool found = false;
 
 		auto GetValueFromString = [](Prop& prop, int32 i = 0) {
@@ -256,39 +256,52 @@ void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector
 		}
 	}
 	else {
+		Prop prop;
+		prop.propName = propName;
+
 		auto encodeValueInString = [](auto& source) {
 			std:string out;
 			FString fstr;
 			if (std::is_same<decltype(source), int32>::value) {
+				prop.propValueType = EValueTypes::int32;
 				fstr = FString::FromInt(source);
 				out = std::string(TCHAR_TO_UTF8(*fstr));
 			}
 			else if (std::is_same<decltype(source), float>::value) {
+				prop.propValueType = EValueTypes::flt;
 				fstr = FString::SanitizeFloat(source);
 				out = std::string(TCHAR_TO_UTF8(*fstr));
 			}
 			else if (std::is_same<decltype(source), FString>::value) {
+				prop.propValueType = EValueTypes::string;
 				out = std::string(TCHAR_TO_UTF8(*source));
 			}
 			else if (std::is_same<decltype(source), bool>::value) {
+				prop.propValueType = EValueTypes::boolean;
 				out = source ? "0" : "1";
 			}
-		}
+			return out
+		};
+
 		if (std::is_same<decltype(instanceProperty), TArray>::value) {
+			prop.isArray = true;
 			for (auto& value : instanceProperty)
 			{
-				encodeValueInString(value);
+				prop.propValues.push_back(encodeValueInString(value));
 			}
 		}
 		else {
-			encodeValueInString(instanceProperty);
-		}
-	}
+			prop.isArray = false;
+			prop.propValues.push_back(encodeValueInString(instanceProperty));
+		};
+
+		properties.push_back(prop);
+	};
 };
 
 enum class EInstanceAction {
-	get,
-	set,
+	toString,
+	toInstance,
 };
 
 typedef FTypeData A;
@@ -316,7 +329,10 @@ template<> void FSDInstanceAction<ESDTypes::type2>(A<ESDTypes::type2>& inst, B i
 template<ESDTypes E>
 std::string FEncodeInstanceData(ESDTypes instType, FTypeData<E>& inst) {
 	std::vector<Prop> instProps;
-	FSDInstanceAction<instType>(inst, instProps, EInstanceAction::get)
+	FSDInstanceAction<instType>(inst, instProps, EInstanceAction::toString);
+	for (Prop prop : instProps) {
+		prop.
+	}
 };
 
 void SaveStaticData() {
