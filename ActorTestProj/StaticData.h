@@ -95,7 +95,7 @@ struct Prop {
 
 /**
 * 
- * Example data format:
+ * Data formating example:
  * 
  * 0;0,prop1Name,1347;3,prop2Name,isArray,textValue1,textValue2;\n
  * 
@@ -114,6 +114,7 @@ struct Prop {
  *		isArr		- this value is not used for anything but gives one more chunk that allows
  *						to identify series of chunks as an encoding of array-holding prop
  *		textValue1	- first of series of subsequent values the array is holding
+ * 
  */
 void FDecodeInstanceData(std::string encodedInstance) {
 	int32 typeCode = encodedInstance[0];
@@ -209,21 +210,30 @@ bool castStdStringToBool(std::string value) {
 };
 
 // Or template with implicit type argument deduction
-void FSDPropertyAction(auto instanceProperty, std::string propName, std::vector<Prop>& properties, EInstanceAction action) {
+void FSDPropertyAction(auto& instanceProperty, std::string propName, std::vector<Prop>& properties, EInstanceAction action) {
 	if (action == EInstanceAction::set) {
 		bool found = false;
 
-		auto GetValue = [](Prop& prop, int32 i = 0) {
-			switch (prop.propValueType)
-			{
-			case EValueTypes::int32:
-				return castStdStringToInt32(prop.propValues[i]);
-			case EValueTypes::flt:
-				return castStdStringToFloat(prop.propValues[i]);
-			case EValueTypes::string:
-				return castStdStringToFstring(prop.propValues[i]);
-			case EValueTypes::boolean:
-				return castStdStringToBool(prop.propValues[i]);
+		auto GetValueFromString = [](Prop& prop, int32 i = 0) {
+			try {
+				switch (prop.propValueType)
+				{
+				case EValueTypes::int32:
+					if (!std::is_same<decltype(instanceProperty), int32>::value) throw;
+					return castStdStringToInt32(prop.propValues[i]);
+				case EValueTypes::flt:
+					if (!std::is_same<decltype(instanceProperty), float>::value) throw;
+					return castStdStringToFloat(prop.propValues[i]);
+				case EValueTypes::string:
+					if (!std::is_same<decltype(instanceProperty), FString>::value) throw;
+					return castStdStringToFstring(prop.propValues[i]);
+				case EValueTypes::boolean:
+					if (!std::is_same<decltype(instanceProperty), bool>::value) throw;
+					return castStdStringToBool(prop.propValues[i]);
+				}
+			}
+			catch () {
+				UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Encoded property type doesn't match declared instance property type."));
 			}
 		};
 
@@ -232,7 +242,7 @@ void FSDPropertyAction(auto instanceProperty, std::string propName, std::vector<
 				found = true;
 				if (prop.isArray) {
 					for (int32 i = 0; i < prop.propValues.size(); i++) {
-						instanceProperty[i] = GetValue(prop, i);
+						instanceProperty[i] = GetValueFromString(prop, i);
 					}
 				}
 				else {
@@ -241,12 +251,38 @@ void FSDPropertyAction(auto instanceProperty, std::string propName, std::vector<
 			}
 		}
 		if (!found) {
-			UE_LOG(LogTemp, Warning, TEXT("---------> !!! Prop of that name not found"));
+			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name: \"s%\" not found.", propName));
 			// :(
 		}
 	}
 	else {
-
+		auto encodeValueInString = [](auto& source) {
+			std:string out;
+			FString fstr;
+			if (std::is_same<decltype(source), int32>::value) {
+				fstr = FString::FromInt(source);
+				out = std::string(TCHAR_TO_UTF8(*fstr));
+			}
+			else if (std::is_same<decltype(source), float>::value) {
+				fstr = FString::SanitizeFloat(source);
+				out = std::string(TCHAR_TO_UTF8(*fstr));
+			}
+			else if (std::is_same<decltype(source), FString>::value) {
+				out = std::string(TCHAR_TO_UTF8(*source));
+			}
+			else if (std::is_same<decltype(source), bool>::value) {
+				out = source ? "0" : "1";
+			}
+		}
+		if (std::is_same<decltype(instanceProperty), TArray>::value) {
+			for (auto& value : instanceProperty)
+			{
+				encodeValueInString(value);
+			}
+		}
+		else {
+			encodeValueInString(instanceProperty);
+		}
 	}
 };
 
@@ -277,11 +313,10 @@ template<> void FSDInstanceAction<ESDTypes::type2>(A<ESDTypes::type2>& inst, B i
 	StaticData.type1.Add(inst.id, inst);
 };
 
-/**
- * 
- */
-void FEncodeInstanceData() {
-	
+template<ESDTypes E>
+std::string FEncodeInstanceData(ESDTypes instType, FTypeData<E>& inst) {
+	std::vector<Prop> instProps;
+	FSDInstanceAction<instType>(inst, instProps, EInstanceAction::get)
 };
 
 void SaveStaticData() {
@@ -291,12 +326,13 @@ void SaveStaticData() {
 
 	for (int i = ESDTypes::type1; i != ESDTypes::type2; i++)
 	{
-		ESDTypes currentType = static_cast<ESDTypes>(static_cast<int>(typeCode));
+		ESDTypes currentType = static_cast<ESDTypes>(static_cast<int>(i));
+		line = (std::string) i;
 		TMap<int32, FTypeData<currentType>> typeData = FSDManager::getTypeData<currentType>();
 
 		for (auto& inst : typeData)
 		{
-			line = FEncodeInstanceData(inst);
+			line = FEncodeInstanceData(currentType, inst);
 			myfile << line << endl;
 		}
 	}
