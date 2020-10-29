@@ -37,101 +37,107 @@
 std::string currentReadLine;
 std::ofstream currentSaveFile;
 
-void FSetValueFromString(std::string source, int32& target) { target = castStdStringToInt32(source); }
-void FSetValueFromString(std::string source, float& target) { target = castStdStringToFloat(source); }
-void FSetValueFromString(std::string source, FString& target) { target = castStdStringToFstring(source); }
-void FSetValueFromString(std::string source, bool& target) { target = castStdStringToBool(source); }
+int32 FGetValueFromString(std::string source, int32& target) { return castStdStringToInt32(source); }
+float FGetValueFromString(std::string source, float& target) { return castStdStringToFloat(source); }
+FString FGetValueFromString(std::string source, FString& target) { return castStdStringToFstring(source); }
+bool FGetValueFromString(std::string source, bool& target) { return castStdStringToBool(source); }
+
+std::string FGetStringFromValue(int32& source, std::string target) { return castInt32ToStdString(source); }
+std::string FGetStringFromValue(float& source, std::string target) { return castFloatToStdString(source); }
+std::string FGetStringFromValue(FString& source, std::string target) { return castFstringToStdString(source); }
+std::string FGetStringFromValue(bool& source, std::string target) { return castBoolToStdString(source); }
 
 template<class T>
 void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
-//void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
-	auto encodeValueInString = []() {
-		if (std::is_same<decltype(source), int32>::value) {
-			prop.propValueType = EValueTypes::int32;
-			fstr = FString::FromInt(source);
-			out = std::string(TCHAR_TO_UTF8(*fstr));
-		}
-		else if (std::is_same<decltype(source), float>::value) {
-			prop.propValueType = EValueTypes::flt;
-			fstr = FString::SanitizeFloat(source);
-			out = std::string(TCHAR_TO_UTF8(*fstr));
-		}
-		else if (std::is_same<decltype(source), FString>::value) {
-			prop.propValueType = EValueTypes::string;
-			out = std::string(TCHAR_TO_UTF8(*source));
-		}
-		else if (std::is_same<decltype(source), bool>::value) {
-			prop.propValueType = EValueTypes::boolean;
-			out = source ? "0" : "1";
-		}
-		else {
-			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Instance property type not matching known value types."));
-		}
-		return out
-	};
 	if (action == EInstanceAction::toInstance) {
 		bool found = false;
 
 		for (FSDInstanceProp prop : properties) {
 			if (propName == prop.propName) {
 				found = true;
-				if (prop.isArray) {
-					for (int32 i = 0; i < prop.propValues.size(); i++) {
-						SetValueFromString(prop, instanceProperty[i], i);
-					}
-				}
-				else {
-					instanceProperty = GetValue(prop, 0);
+				decltype(instanceProperty)::value_type newItem;
+				FSetValueFromString(prop.propValues, newItem);
+				instanceProperty.push_back(newItem);
+			}
+		}
+		if (!found) {
+			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name not found."));
+		}
+	}
+	else if (action == EInstanceAction::toString) {
+		FSDInstanceProp prop;
+		prop.propName = propName;
+		prop.isArray = true;
+
+		if (std::is_same<decltype(instanceProperty)::value_type, int32>::value) {
+			prop.propValueType = EValueTypes::int32;
+		}
+		else if (std::is_same<decltype(instanceProperty)::value_type, float>::value) {
+			prop.propValueType = EValueTypes::flt;
+		}
+		else if (std::is_same<decltype(instanceProperty)::value_type, FString>::value) {
+			prop.propValueType = EValueTypes::string;
+		}
+		else if (std::is_same<decltype(instanceProperty)::value_type, bool>::value) {
+			prop.propValueType = EValueTypes::boolean;
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Instance property type not matching known value types."));
+		}
+
+		std::string newItem;
+		for (T& value : instanceProperty)
+		{
+			newItem = FSetStringFromValue(value);
+			prop.propValues.push_back(newItem);
+		}
+
+		properties.push_back(prop);
+	};
+};
+template<class T>
+void FSDPropertyAction(TArray<T>& instanceProperty, std::string propName, std::vector<FSDInstanceProp> & properties, EInstanceAction action) {
+	if (action == EInstanceAction::toInstance) {
+		bool found = false;
+
+		for (FSDInstanceProp prop : properties) {
+			if (propName == prop.propName) {
+				found = true;
+				for (int32 i = 0; i < prop.propValues.size(); i++) {
+					decltype(instanceProperty)::value_type newItem;
+					FSetValueFromString(prop.propValues[i], newItem);
+					instanceProperty.push_back(newItem);
 				}
 			}
 		}
 		if (!found) {
 			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name not found."));
-			// :(
 		}
 	}
-	else {
+	else if (action == EInstanceAction::toString) {
 		FSDInstanceProp prop;
 		prop.propName = propName;
+		prop.isArray = true;
 
-		auto encodeValueInString = [](auto& source) {
-			std:string out;
-			FString fstr;
-			if (std::is_same<decltype(source), int32>::value) {
-				prop.propValueType = EValueTypes::int32;
-				fstr = FString::FromInt(source);
-				out = std::string(TCHAR_TO_UTF8(*fstr));
-			}
-			else if (std::is_same<decltype(source), float>::value) {
-				prop.propValueType = EValueTypes::flt;
-				fstr = FString::SanitizeFloat(source);
-				out = std::string(TCHAR_TO_UTF8(*fstr));
-			}
-			else if (std::is_same<decltype(source), FString>::value) {
-				prop.propValueType = EValueTypes::string;
-				out = std::string(TCHAR_TO_UTF8(*source));
-			}
-			else if (std::is_same<decltype(source), bool>::value) {
-				prop.propValueType = EValueTypes::boolean;
-				out = source ? "0" : "1";
-			}
-			else {
-				UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Instance property type not matching known value types."));
-			}
-			return out
-		};
-
-		if (std::is_same<decltype(instanceProperty), TArray>::value) {
-			prop.isArray = true;
-			for (auto& value : instanceProperty)
-			{
-				prop.propValues.push_back(encodeValueInString(value));
-			}
+		if (std::is_same<decltype(instanceProperty)::value_type, int32>::value) {
+			prop.propValueType = EValueTypes::int32;
+		}
+		else if (std::is_same<decltype(instanceProperty)::value_type, float>::value) {
+			prop.propValueType = EValueTypes::flt;
+		}
+		else if (std::is_same<decltype(instanceProperty)::value_type, FString>::value) {
+			prop.propValueType = EValueTypes::string;
+		}
+		else if (std::is_same<decltype(instanceProperty)::value_type, bool>::value) {
+			prop.propValueType = EValueTypes::boolean;
 		}
 		else {
-			prop.isArray = false;
-			prop.propValues.push_back(encodeValueInString(instanceProperty));
-		};
+			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Instance property type not matching known value types."));
+		}
+
+		std::string newItem;
+		newItem = FSetStringFromValue(instanceProperty);
+		prop.propValues.push_back(newItem);
 
 		properties.push_back(prop);
 	};

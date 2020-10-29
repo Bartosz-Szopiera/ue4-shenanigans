@@ -47,6 +47,27 @@ bool castStdStringToBool(std::string value) {
 	}
 };
 
+std::string castInt32ToStdString(int32 source) {
+	FString fstr;
+	fstr = FString::FromInt(source);
+	return std::string(TCHAR_TO_UTF8(*fstr));
+};
+
+std::string castFstringToStdString(FString source) {
+	FString fstr;
+	return std::string(TCHAR_TO_UTF8(*source));
+};
+
+std::string castFloatToStdString(float source) {
+	FString fstr;
+	fstr = FString::SanitizeFloat(source);
+	return std::string(TCHAR_TO_UTF8(*fstr));
+};
+
+std::string castBoolToStdString(bool source) {
+	return source ? "0" : "1";
+};
+
 struct extractedChunks {
 	std::vector<std::string> chunks;
 	int32 count;
