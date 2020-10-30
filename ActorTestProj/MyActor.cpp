@@ -1,7 +1,7 @@
 // 2020 Purple Pill Productions.
 
 #include "MyActor.h"
-//#include "StaticData.h"
+#include "StaticData.h"
 
 // Sets default values
 AMyActor::AMyActor():
@@ -65,7 +65,7 @@ void AMyActor::PostLoad()
 
 void AMyActor::MaybeLoadStaticData()
 {
-	/*if (FSDManager::staticDataLoaded()) {
+	if (FSDManager::staticDataLoaded()) {
 		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] --------> Setting static data for actor."));
 		FTypeData<ESDTypes::type1> instanceData = FSDManager::GetTypeInstanceData<ESDTypes::type1>(1);
 		DamageTimeInSeconds = instanceData.prop1;
@@ -73,7 +73,7 @@ void AMyActor::MaybeLoadStaticData()
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] --------> !! Static data was not loaded."));
-	}*/
+	}
 }
 
 #if WITH_EDITOR

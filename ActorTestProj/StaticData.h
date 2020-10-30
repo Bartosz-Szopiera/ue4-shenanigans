@@ -122,7 +122,7 @@ public:
 	static std::vector<FSDInstanceProp> FDecodeInstanceData() {
 		std::string encodedInstance = SDCurrentReadLine;
 		encodedInstance.erase(encodedInstance.begin());
-		FSDExtractedChunks instancePropsChunks = FSDExtractChunks(encodedInstance);
+		FSDHelp::FSDExtractedChunks instancePropsChunks = FSDHelp::FSDExtractChunks(encodedInstance);
 
 		std::vector<FSDInstanceProp> instanceProps;
 
@@ -130,10 +130,10 @@ public:
 		for (std::string propChunk : instancePropsChunks.chunks) {
 			FSDInstanceProp prop;
 
-			FSDExtractedChunks propDescriptors = FSDExtractChunks(propChunk, ',');
+			FSDHelp::FSDExtractedChunks propDescriptors = FSDHelp::FSDExtractChunks(propChunk, ',');
 
 			//prop.propValueType = static_cast<EValueTypes>(static_cast<int>(propDescriptors.chunks[0]));
-			int32 typeCode = FSDCastStdStringToInt32(propDescriptors.chunks[0]);
+			int32 typeCode = FSDHelp::FSDCastStdStringToInt32(propDescriptors.chunks[0]);
 			prop.propValueType = static_cast<EValueTypes>(typeCode);
 			prop.propName = propDescriptors.chunks[1];
 
@@ -172,7 +172,7 @@ public:
 	template<class T>
 	static void FSDSetPropValueFromInstanceProp(T source, FSDInstanceProp& prop) {
 		prop.isArray = false;
-		prop.propValues.push_back(FSDGetStringFromValue(source));
+		prop.propValues.push_back(FSDHelp::FSDGetStringFromValue(source));
 	};
 
 	template<class T>
@@ -188,7 +188,7 @@ public:
 			for (FSDInstanceProp prop : properties) {
 				if (propName == prop.propName) {
 					for (int32 i = 0; i < prop.propValues.size(); i++) {
-						FSDSetInstancePropertyFromString(instanceProperty, prop.propValues[i]);
+						FSDHelp::FSDSetInstancePropertyFromString(instanceProperty, prop.propValues[i]);
 					}
 					return;
 				}
