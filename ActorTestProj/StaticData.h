@@ -33,20 +33,6 @@ public:
 	};
 
 	static void FParseRawStaticData() {
-		//std::ifstream infile("StaticData.txt");
-
-		//while (std::getline(infile, FSDCurrentReadLine))
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("---------> Reading line: %s."), *FSDHelp::FSDCastStdStringToFstring(FSDCurrentReadLine));
-		//	if (FSDCurrentReadLine.size() < 9) FSDHelp::FThrow("Ill formatted line: \n", FSDCurrentReadLine);
-
-		//	int typeCode = static_cast<int>(FSDCurrentReadLine[0]);
-		//	FSDCurrentReadLine.erase(FSDCurrentReadLine[0]);
-		//	FSDSpecializationJuncture(typeCode, ESDSpecializations::createStaticData);
-		//}
-		////FSDStaticData.dataIsSet = true;
-		//UE_LOG(LogTemp, Warning, TEXT("---------> Successfully parsed static data."));
-
 		FString filePath = FPaths::Combine(FPaths::GameSourceDir(), FApp::GetProjectName(), TEXT("StaticData.txt"));
 		UE_LOG(LogTemp, Warning, TEXT("---------> Combined file path:\n%s"), *filePath);
 		IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
@@ -60,6 +46,7 @@ public:
 
 				int32 delimPosition;
 				int32 fragmentLength;
+				int32 typeCode;
 
 				while (FileContent.Len() > 0) {
 					// No instance can be encoded in less than 9 symbols
@@ -72,6 +59,7 @@ public:
 
 					// Get characters from left and remove end-line if it was there
 					FSDCurrentReadLine = FileContent.Left(fragmentLength);
+					FSDCurrentReadLine.RemoveFromEnd(TEXT("\n"));
 
 					if (FSDCurrentReadLine.Len() < 9) { FSDHelp::FThrow(TEXT("Ill formatted line: "), FSDCurrentReadLine); };
 
@@ -83,9 +71,16 @@ public:
 					UE_LOG(LogTemp, Warning, TEXT("---------> Parsing line: %s"), *FSDCurrentReadLine);
 					UE_LOG(LogTemp, Warning, TEXT("---------> Remaining file: %s"), *FileContent);
 
-					int32 typeCode = static_cast<int32>(FCString::Atoi(*(FSDCurrentReadLine.RightChop(1))));
-					FSDSpecializationJuncture(typeCode, ESDSpecializations::createStaticData);
+					// Read type and remove it and next 2 delimiters from line
+					typeCode = FCString::Atoi(*(FSDCurrentReadLine.Left(1)));
+					FSDCurrentReadLine.RightChopInline(3, true);
+
+					FSDSpecializationJuncture(static_cast<int32>(typeCode), ESDSpecializations::createStaticData);
 				}
+
+				// Announce that static data is ready
+				UE_LOG(LogTemp, Warning, TEXT("---------> Announcing that static data is ready"));
+				FSDStaticData.dataIsSet = true;
 			}
 			else
 			{
@@ -95,18 +90,6 @@ public:
 		else {
 			UE_LOG(LogTemp, Warning, TEXT("---------> FileManipulation: File does not exist"));
 		}
-
-
-		//FString fn = "C:\\Users\\Bartosz\\Documents\\Unreal Projects\\ActorTestProj\\Source\\ActorTestProj\\StaticData";
-		//const TCHAR* fileName = *fn;
-		/**
-			None                = 0,
-			NoFail              = 1 << 0,
-			Silent              = 1 << 1,
-			AllowWrite          = 1 << 2
-		 */
-		//FFileHelper::LoadFileToString(FileContent, fileName, FFileHelper::EHashOptions::EnableVerify, 1);
-		//UE_LOG(LogTemp, Warning, TEXT("---------> Successfully read static data file: \n%s"), *fileName);
 	};
 
 	static void SaveStaticData() {
