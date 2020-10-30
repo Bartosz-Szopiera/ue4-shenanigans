@@ -1,6 +1,17 @@
+
 #pragma once
 
-#include "StaticDataTypes.generated.h"
+//#include "StaticDataTypes.generated.h"
+
+enum class EInstanceAction {
+	writeToString,
+	writeToInstance,
+};
+
+enum class ESDSpecializations {
+	createStaticData,
+	saveStaticData,
+};
 
 enum class EValueTypes {
 	int32 = 0,
@@ -12,11 +23,6 @@ enum class EValueTypes {
 enum class ESDTypes {
 	type1 = 0,
 	type2 = 1,
-};
-
-enum class EInstanceAction {
-	writeToString,
-	writeToInstance,
 };
 
 struct FType1Data {
@@ -54,9 +60,9 @@ struct FTypeData {
 template<> struct FTypeData<ESDTypes::type1> : public FType1Data {};
 template<> struct FTypeData<ESDTypes::type2> : public FType2Data {};
 
-USTRUCT(BlueprintType)
+//USTRUCT(BlueprintType)
 struct FStaticData {
-	GENERATED_BODY()
+	//GENERATED_BODY()
 
 	TMap<int32, FTypeData<ESDTypes::type1>> type1;
 	TMap<int32, FTypeData<ESDTypes::type2>> type2;
