@@ -11,6 +11,6 @@ UMyGameInstance::UMyGameInstance() {
 };
 
 //FStaticData UMyGameInstance::GetStaticData() {
-//	return FSDManager::StaticData;
+//	return FSDManager::FSDStaticData;
 //}
 

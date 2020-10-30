@@ -10,78 +10,77 @@
 
 class FSDManager {
 public:
-	static FStaticData StaticData;
+	static FStaticData FSDStaticData;
 
-	static std::string SDCurrentReadLine;
+	static std::string FSDCurrentReadLine;
 
-	static std::ofstream SDCurrentSaveFile;
+	static std::ofstream FSDCurrentSaveFile;
 
 	static bool staticDataLoaded() {
-		return StaticData.dataIsSet;
+		return FSDStaticData.dataIsSet;
 	};
 
 	static void FSetStaticData() {
 		UE_LOG(LogTemp, Warning, TEXT("---------> Reading StaticData."));
-		FParseRawStaticData();
-		StaticData.dataIsSet = true;
+		try {
+			FParseRawStaticData();
+		}
+		catch (std::exception& e) {
+			UE_LOG(LogTemp, Fatal, TEXT("---------> Error when parsing static data:\n %s."), e.what());
+		}
+		FSDStaticData.dataIsSet = true;
 	};
 
 	static void FParseRawStaticData() {
 		std::ifstream infile("StaticData.txt");
 
-		while (std::getline(infile, SDCurrentReadLine))
+		while (std::getline(infile, FSDCurrentReadLine))
 		{
-			int typeCode = static_cast<int>(SDCurrentReadLine[0]);
+			if (FSDCurrentReadLine.size() < 9) FSDHelp::FThrow("Ill formatted line: \n", FSDCurrentReadLine);
+
+			int typeCode = static_cast<int>(FSDCurrentReadLine[0]);
+			FSDCurrentReadLine.erase(FSDCurrentReadLine[0]);
 			FSDSpecializationJuncture(typeCode, ESDSpecializations::createStaticData);
 		}
 	};
 
 	static void SaveStaticData() {
-		SDCurrentSaveFile.open("StaticDataOut.txt");
+		FSDCurrentSaveFile.open("StaticDataOut.txt");
 
 		for (int i = 0; i <= static_cast<int>(ESDTypes::type2); i++)
 		{
 			FSDSpecializationJuncture(i, ESDSpecializations::saveStaticData);
 		}
 
-		SDCurrentSaveFile.close();
-	};
-
-	static void FSDSpecializationJuncture(int typeCode, ESDSpecializations spec) {
-		if (typeCode == static_cast<int>(ESDTypes::type1)) {
-			FSDSpecializedCall<ESDTypes::type1>(spec);
-		}
-		else if (typeCode == static_cast<int>(ESDTypes::type2)) {
-			FSDSpecializedCall<ESDTypes::type2>(spec);
-		}
+		FSDCurrentSaveFile.close();
 	};
 
 	template<ESDTypes E>
 	static void FSDSpecializedCall(ESDSpecializations spec) {
 		if (spec == ESDSpecializations::createStaticData) {
-			FTypeData<E> instanceStruct;
+			FSDTypeData<E> instanceStruct;
 			std::vector<FSDInstanceProp> instanceProps = FDecodeInstanceData();
-			FSDInstanceAction<E>(instanceStruct, instanceProps, EInstanceAction::writeToInstance);
+			FSDInstanceAction<E>(instanceStruct, instanceProps, ESDInstanceAction::writeToInstance);
 			UE_LOG(LogTemp, Warning, TEXT("---------> Adding instance data to map..."));
 		}
 		else if (spec == ESDSpecializations::saveStaticData) {
-			TMap<int32, FTypeData<E>> typeData = GetTypeData<E>();
+			TMap<int32, FSDTypeData<E>> typeData = GetTypeData<E>();
 
 			std::string line;
 			for (auto& inst : typeData)
 			{
 				line.append(FEncodeInstanceData<E>(inst.Value));
 				line.push_back('\n');
-				SDCurrentSaveFile << line;
+				FSDCurrentSaveFile << line;
 				line.clear();
 			}
 		}
 	};
 
 	template<ESDTypes E>
-	static std::string FEncodeInstanceData(FTypeData<E>& inst) {
+	static std::string FEncodeInstanceData(FSDTypeData<E>& inst) {
 		std::vector<FSDInstanceProp> instProps;
-		FSDManager::FSDInstanceAction<E>(inst, instProps, EInstanceAction::writeToString);
+		FSDManager::FSDInstanceAction<E>(inst, instProps, ESDInstanceAction::writeToString);
 
 		std::string encodedInstance;
 
@@ -120,8 +119,7 @@ public:
 	};
 
 	static std::vector<FSDInstanceProp> FDecodeInstanceData() {
-		std::string encodedInstance = SDCurrentReadLine;
-		encodedInstance.erase(encodedInstance.begin());
+		std::string encodedInstance = FSDCurrentReadLine;
 		FSDHelp::FSDExtractedChunks instancePropsChunks = FSDHelp::FSDExtractChunks(encodedInstance);
 
 		std::vector<FSDInstanceProp> instanceProps;
@@ -132,9 +130,8 @@ public:
 
 			FSDHelp::FSDExtractedChunks propDescriptors = FSDHelp::FSDExtractChunks(propChunk, ',');
 
-			//prop.propValueType = static_cast<EValueTypes>(static_cast<int>(propDescriptors.chunks[0]));
 			int32 typeCode = FSDHelp::FSDCastStdStringToInt32(propDescriptors.chunks[0]);
-			prop.propValueType = static_cast<EValueTypes>(typeCode);
+			prop.propValueType = static_cast<ESDValueTypes>(typeCode);
 			prop.propName = propDescriptors.chunks[1];
 
 			if (propDescriptors.count == 3) { // simple data
@@ -154,8 +151,8 @@ public:
 	};
 
 	template<ESDTypes E>
-	static FTypeData<E>& GetTypeInstanceData(int32 instanceId) {
-		TMap<int32, FTypeData<E>> typeData = GetTypeData<E>();
+	static FSDTypeData<E>& GetTypeInstanceData(int32 instanceId) {
+		TMap<int32, FSDTypeData<E>> typeData = GetTypeData<E>();
 		bool hasInstance = typeData.Contains(instanceId);
 		if (!hasInstance) {
 			UE_LOG(LogTemp, Warning, TEXT("---------> There was no item"));
@@ -163,28 +160,9 @@ public:
 		return typeData[instanceId];
 	};
 
-	// It's about getting prop value for the purpose of encoding in string
 	template<class T>
-	static void FSDSetPropValueFromInstanceProp(TArray<T> source, FSDInstanceProp& prop) {
-		prop.isArray = true;
-		for (T& value : source) { prop.propValues.push_back(FSDGetStringFromValue(value)); };
-	};
-	template<class T>
-	static void FSDSetPropValueFromInstanceProp(T source, FSDInstanceProp& prop) {
-		prop.isArray = false;
-		prop.propValues.push_back(FSDHelp::FSDGetStringFromValue(source));
-	};
-
-	template<class T>
-	static EValueTypes FSDGetValueTypeFromInstProp() { return EValueTypes::int32; };
-	template<> static EValueTypes FSDGetValueTypeFromInstProp<int32>() { return EValueTypes::int32; };
-	template<> static EValueTypes FSDGetValueTypeFromInstProp<float>() { return EValueTypes::flt; };
-	template<> static EValueTypes FSDGetValueTypeFromInstProp<FString>() { return EValueTypes::string; };
-	template<> static EValueTypes FSDGetValueTypeFromInstProp<bool>() { return EValueTypes::boolean; };
-
-	template<class T>
-	static void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, EInstanceAction action) {
-		if (action == EInstanceAction::writeToInstance) {
+	static void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, ESDInstanceAction action) {
+		if (action == ESDInstanceAction::writeToInstance) {
 			for (FSDInstanceProp prop : properties) {
 				if (propName == prop.propName) {
 					for (int32 i = 0; i < prop.propValues.size(); i++) {
@@ -195,11 +173,11 @@ public:
 			}
 			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name not found."));
 		}
-		else if (action == EInstanceAction::writeToString) {
+		else if (action == ESDInstanceAction::writeToString) {
 			FSDInstanceProp prop;
 			prop.propName = propName;
-			prop.propValueType = FSDGetValueTypeFromInstProp<T>();
-			FSDSetPropValueFromInstanceProp(instanceProperty, prop);
+			prop.propValueType = FSDHelp::FSDGetValueTypeFromInstProp<T>();
+			FSDHelp::FSDSetPropValueFromInstanceProp(instanceProperty, prop);
 
 			properties.push_back(prop);
 		}
@@ -207,27 +185,37 @@ public:
 
 	/**
 	 * =========================================================
+	 * Those require modification with ESDTypes change.
 	 */
 
+	static void FSDSpecializationJuncture(int typeCode, ESDSpecializations spec) {
+		if (typeCode == static_cast<int>(ESDTypes::type1)) {
+			FSDSpecializedCall<ESDTypes::type1>(spec);
+		}
+		else if (typeCode == static_cast<int>(ESDTypes::type2)) {
+			FSDSpecializedCall<ESDTypes::type2>(spec);
+		}
+	};
+
 	template<ESDTypes E>
-	static TMap<int32, FTypeData<E>> GetTypeData() { return StaticData.type1; };
-	template<> static TMap<int32, FTypeData<ESDTypes::type1>> GetTypeData<ESDTypes::type1>() { return StaticData.type1; };
-	template<> static TMap<int32, FTypeData<ESDTypes::type2>> GetTypeData<ESDTypes::type2>() { return StaticData.type2; };
+	static TMap<int32, FSDTypeData<E>> GetTypeData() { return FSDStaticData.type1; };
+	template<> static TMap<int32, FSDTypeData<ESDTypes::type1>> GetTypeData<ESDTypes::type1>() { return FSDStaticData.type1; };
+	template<> static TMap<int32, FSDTypeData<ESDTypes::type2>> GetTypeData<ESDTypes::type2>() { return FSDStaticData.type2; };
 
 	typedef std::vector<FSDInstanceProp>& P;
-	typedef EInstanceAction A;
+	typedef ESDInstanceAction A;
 	template<ESDTypes E>
-	static void FSDInstanceAction(FTypeData<E>& inst, P instanceProps, A action) {};
-	template<> static void FSDInstanceAction<ESDTypes::type1>(FTypeData<ESDTypes::type1>& inst, P instProps, A action) {
+	static void FSDInstanceAction(FSDTypeData<E>& inst, P instanceProps, A action) {};
+	template<> static void FSDInstanceAction<ESDTypes::type1>(FSDTypeData<ESDTypes::type1>& inst, P instProps, A action) {
 		FSDPropertyAction(inst.prop1, "prop1", instProps, action);
 		FSDPropertyAction(inst.prop2, "prop2", instProps, action);
 		FSDPropertyAction(inst.id, "id", instProps, action);
-		if (action == A::writeToInstance) StaticData.type1.Add(inst.id, inst);
+		if (action == A::writeToInstance) FSDStaticData.type1.Add(inst.id, inst);
 	};
-	template<> static void FSDInstanceAction<ESDTypes::type2>(FTypeData<ESDTypes::type2>& inst, P instProps, A action) {
+	template<> static void FSDInstanceAction<ESDTypes::type2>(FSDTypeData<ESDTypes::type2>& inst, P instProps, A action) {
 		FSDPropertyAction(inst.prop1, "prop1", instProps, action);
 		FSDPropertyAction(inst.prop2, "prop2", instProps, action);
 		FSDPropertyAction(inst.id, "id", instProps, action);
-		if (action == A::writeToInstance) StaticData.type2.Add(inst.id, inst);
+		if (action == A::writeToInstance) FSDStaticData.type2.Add(inst.id, inst);
 	};
 };

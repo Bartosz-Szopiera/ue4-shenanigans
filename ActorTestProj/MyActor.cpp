@@ -67,7 +67,7 @@ void AMyActor::MaybeLoadStaticData()
 {
 	if (FSDManager::staticDataLoaded()) {
 		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] --------> Setting static data for actor."));
-		FTypeData<ESDTypes::type1> instanceData = FSDManager::GetTypeInstanceData<ESDTypes::type1>(1);
+		FSDTypeData<ESDTypes::type1> instanceData = FSDManager::GetTypeInstanceData<ESDTypes::type1>(1);
 		DamageTimeInSeconds = instanceData.prop1;
 		TotalDamage = instanceData.prop2;
 	}

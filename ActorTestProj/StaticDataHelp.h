@@ -7,8 +7,17 @@
 
 class FSDHelp {
 public:
+	/**
+	 * Casting from strings
+	 */
 	static FString FSDCastStdStringToFstring(std::string value) {
 		return FString(value.c_str());
+	};
+
+	static void FThrow(std::string s1 = "", std::string s2 = "", std::string s3 = "") {
+		std::string end = '\n' + "---------------------------------------------" + '\n';
+		std::string text = s1 + s2 + s3;
+		throw (text + end);
 	};
 
 	static int32 FSDCastStdStringToInt32(std::string value) {
@@ -39,6 +48,9 @@ public:
 		return false;
 	};
 
+	/**
+	 * Casting from value types to std::string
+	 */
 	static std::string FSDCastInt32ToStdString(int32 source) {
 		FString fstr;
 		fstr = FString::FromInt(source);
@@ -59,6 +71,10 @@ public:
 	static std::string FSDCastBoolToStdString(bool source) {
 		return source ? "0" : "1";
 	};
+
+	/**
+	 * 
+	 */
 
 	static struct FSDExtractedChunks {
 		std::vector<std::string> chunks;
@@ -88,6 +104,9 @@ public:
 		return extracted;
 	};
 
+	/**
+	 * 
+	 */
 	template<class T>
 	static T FSDGetValueFromString(std::string source) { return FSDCastStdStringToInt32(source); };
 	template<> static int32 FSDGetValueFromString<int32>(std::string source) { return FSDCastStdStringToInt32(source); };
@@ -95,11 +114,27 @@ public:
 	template<> static FString FSDGetValueFromString<FString>(std::string source) { return FSDCastStdStringToFstring(source); };
 	template<> static bool FSDGetValueFromString<bool>(std::string source) { return FSDCastStdStringToBool(source); };
 
+	/**
+	 * 
+	 */
 	static std::string FSDGetStringFromValue(int32 source) { return FSDCastInt32ToStdString(source); };
 	static std::string FSDGetStringFromValue(float source) { return FSDCastFloatToStdString(source); };
 	static std::string FSDGetStringFromValue(FString source) { return FSDCastFstringToStdString(*source); };
 	static std::string FSDGetStringFromValue(bool source) { return FSDCastBoolToStdString(source); };
 
+	/**
+	 * 
+	 */
+	template<class T>
+	static ESDValueTypes FSDGetValueTypeFromInstProp() { return ESDValueTypes::int32; };
+	template<> static ESDValueTypes FSDGetValueTypeFromInstProp<int32>() { return ESDValueTypes::int32; };
+	template<> static ESDValueTypes FSDGetValueTypeFromInstProp<float>() { return ESDValueTypes::flt; };
+	template<> static ESDValueTypes FSDGetValueTypeFromInstProp<FString>() { return ESDValueTypes::string; };
+	template<> static ESDValueTypes FSDGetValueTypeFromInstProp<bool>() { return ESDValueTypes::boolean; };
+
+	/**
+	 * 
+	 */
 	template<class T>
 	static void FSDSetInstancePropertyFromString(TArray<T>& instanceProperty, std::string value) {
 		T newItem;
@@ -117,5 +152,19 @@ public:
 	};
 	static void FSDSetInstancePropertyFromString(bool& instanceProperty, std::string value) {
 		instanceProperty = FSDGetValueFromString<bool>(value);
+	};
+
+	/**
+	 * It's about getting prop value for the purpose of encoding in string
+	 */
+	template<class T>
+	static void FSDSetPropValueFromInstanceProp(TArray<T> source, FSDInstanceProp& prop) {
+		prop.isArray = true;
+		for (T& value : source) { prop.propValues.push_back(FSDHelp::FSDGetStringFromValue(value)); };
+	};
+	template<class T>
+	static void FSDSetPropValueFromInstanceProp(T source, FSDInstanceProp& prop) {
+		prop.isArray = false;
+		prop.propValues.push_back(FSDHelp::FSDGetStringFromValue(source));
 	};
 };

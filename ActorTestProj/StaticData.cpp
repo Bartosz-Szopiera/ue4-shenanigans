@@ -10,12 +10,13 @@
  *
  * 0;0,prop1Name,1347;3,prop2Name,isArray,textValue1,textValue2;\n
  *
- * ; - delimiter
+ * ; - properties delimiter
+ * , - delimiter of tokens within property
  *
  * 0 - first zero - it's numerical value of type according to ESDTypes
  *
  * ;0,prop1Name,1347; - this is first property
- *		0			- numerical value of type of value held according to EValueTypes
+ *		0			- numerical value of type of value held according to ESDValueTypes
  *		prop1Name	- property name
  *		1347		- value
  *
@@ -25,14 +26,13 @@
  *		isArr		- this value is not used for anything but gives one more chunk that allows
  *						to identify series of chunks as an encoding of array-holding prop
  *		textValue1	- first of series of subsequent values the array is holding
- *
  */
 
 /**
  * Initializing static data
  */
-FStaticData FSDManager::StaticData;
+FStaticData FSDManager::FSDStaticData;
 
-std::string FSDManager::SDCurrentReadLine;
+std::string FSDManager::FSDCurrentReadLine;
 
-std::ofstream FSDManager::SDCurrentSaveFile;
+std::ofstream FSDManager::FSDCurrentSaveFile;
