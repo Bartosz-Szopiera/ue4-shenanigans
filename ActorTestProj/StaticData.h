@@ -24,12 +24,7 @@ public:
 
 	static void FSetStaticData() {
 		UE_LOG(LogTemp, Warning, TEXT("---------> Reading StaticData."));
-		try {
-			FParseRawStaticData();
-		}
-		catch (std::exception& e) {
-			UE_LOG(LogTemp, Fatal, TEXT("---------> Error when parsing static data:\n %s."), e.what());
-		}
+		FParseRawStaticData();
 	};
 
 	static void FParseRawStaticData() {
@@ -244,6 +239,12 @@ public:
 			FSDSpecializedCall<ESDTypes::type1>(spec);
 		}
 		else if (typeCode == static_cast<int>(ESDTypes::type2)) {
+			FSDSpecializedCall<ESDTypes::type2>(spec);
+		}
+		else if (typeCode == static_cast<int>(ESDTypes::type3)) {
+			FSDSpecializedCall<ESDTypes::type2>(spec);
+		}
+		else if (typeCode == static_cast<int>(ESDTypes::type4)) {
 			FSDSpecializedCall<ESDTypes::type2>(spec);
 		}
 	};

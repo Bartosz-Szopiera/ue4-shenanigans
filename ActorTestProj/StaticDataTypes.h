@@ -22,7 +22,9 @@ enum class ESDValueTypes {
 
 enum class ESDTypes {
 	type1 = 0,
-	type2 = 1,
+	type2,
+	type3,
+	type4,
 };
 
 struct FType1Data {
@@ -34,7 +36,13 @@ struct FType1Data {
 struct FType2Data {
 	int32 id;
 	int32 prop1;
-	int32 prop2;
+	float prop2;
+	FString prop3;
+	bool prop4;
+	TArray<int32> prop5;
+	TArray<float> prop6;
+	TArray<FString> prop7;
+	TArray<bool> prop8;
 };
 
 struct FSDInstanceProp {

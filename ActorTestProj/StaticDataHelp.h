@@ -16,8 +16,8 @@ public:
 
 	static void FThrow(FString s1 = TEXT(""), FString s2 = TEXT(""), FString s3 = TEXT("")) {
 		FString end = TEXT("\n---------------------------------------------\n");
-		FString text = s1.Append(s2).Append(s3).Append(end);
-		UE_LOG(LogTemp, Warning, TEXT("---------> Exception: %s"), *text);
+		FString text = s1.Append(s2).Append(s3);
+		UE_LOG(LogTemp, Warning, TEXT("%s---------> Exception:\n%s\n"),*end, *text);
 		throw;
 	};
 

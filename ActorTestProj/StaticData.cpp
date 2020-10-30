@@ -8,7 +8,7 @@
 *
  * Data formating example:
  *
- * 0;0,prop1Name,1347;3,prop2Name,isArray,textValue1,textValue2;\n
+ * 0,;0,prop1Name,1347,;3,prop2Name,isArray,textValue1,textValue2,;\n
  *
  * ; - properties delimiter
  * , - delimiter of tokens within property
