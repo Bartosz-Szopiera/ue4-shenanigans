@@ -1,31 +1,38 @@
 // 2020 Purple Pill Productions.
 
-//#include "StaticData.h"
+#pragma once
 
-//FStaticData FSetStaticData() {
-//	// type1
-//	FTypeData<ESDTypes::type1> entity1type1;
-//	entity1type1.id = 1;
-//	entity1type1.prop1 = 11;
-//	entity1type1.prop2 = 12;
-//
-//	FSDManager::StaticData.type1.Add(entity1type1.id, entity1type1);
-//
-//	// type2
-//	FTypeData<ESDTypes::type2> entity1type2;
-//	entity1type1.id = 21;
-//	entity1type1.prop1 = 21;
-//	entity1type1.prop2 = 22;
-//
-//	FSDManager::StaticData.type2.Add(entity1type2.id, entity1type2);
-//
-//	// Wrapping up
-//	FSDManager::StaticData.dataIsSet = true;
-//	//return FSDManager::StaticData;
-//}
+#include "StaticData.h"
+
+/**
+*
+ * Data formating example:
+ *
+ * 0;0,prop1Name,1347;3,prop2Name,isArray,textValue1,textValue2;\n
+ *
+ * ; - properties delimiter
+ * , - delimiter of tokens within property
+ *
+ * 0 - first zero - it's numerical value of type according to ESDTypes
+ *
+ * ;0,prop1Name,1347; - this is first property
+ *		0			- numerical value of type of value held according to ESDValueTypes
+ *		prop1Name	- property name
+ *		1347		- value
+ *
+ * ;3,prop2Name,,textValue1,textValue2; - second property which is an array
+ *		3			- numerical code for the value type
+ *		prop2Name	- property name
+ *		isArr		- this value is not used for anything but gives one more chunk that allows
+ *						to identify series of chunks as an encoding of array-holding prop
+ *		textValue1	- first of series of subsequent values the array is holding
+ */
 
 /**
  * Initializing static data
  */
-//FStaticData FSDManager::StaticData = FSetStaticData();
-//FStaticData FSDManager::StaticData;
+FStaticData FSDManager::FSDStaticData;
+
+FString FSDManager::FSDCurrentReadLine;
+
+std::ofstream FSDManager::FSDCurrentSaveFile;

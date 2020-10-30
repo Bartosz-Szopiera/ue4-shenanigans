@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "StaticData.h"
+//#include "StaticData.h"
 #include "MyBlueprintFunctionLibrary.generated.h"
 
 /**
@@ -17,8 +17,14 @@ class ACTORTESTPROJ_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionL
 	
 public:
 
-	UFUNCTION(BlueprintCallable, Category = "Static Data")
-	FStaticData GetStaticData() {
-		return FSDManager::StaticData;
-	}
+	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
+	static FStaticData GetStaticData() {
+		return FSDManager::FSDStaticData;
+	}*/
+
+	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
+	template<ESDTypes E>
+	static FSDTypeData<E> GetTypeInstanceData(ESDTypes dataType) {
+		return FSDManager::GetTypeInstanceData<dataType>(1);
+	};*/
 };
