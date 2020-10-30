@@ -17,6 +17,8 @@ public:
 	static std::ofstream FSDCurrentSaveFile;
 
 	static bool staticDataLoaded() {
+		FString text = FSDStaticData.dataIsSet ? "YES" : "NO";
+		UE_LOG(LogTemp, Warning, TEXT("---------> Is data set?: %s"), *text);
 		return FSDStaticData.dataIsSet;
 	};
 
@@ -28,20 +30,53 @@ public:
 		catch (std::exception& e) {
 			UE_LOG(LogTemp, Fatal, TEXT("---------> Error when parsing static data:\n %s."), e.what());
 		}
-		FSDStaticData.dataIsSet = true;
 	};
 
 	static void FParseRawStaticData() {
-		std::ifstream infile("StaticData.txt");
+		//std::ifstream infile("StaticData.txt");
 
-		while (std::getline(infile, FSDCurrentReadLine))
+		//while (std::getline(infile, FSDCurrentReadLine))
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("---------> Reading line: %s."), *FSDHelp::FSDCastStdStringToFstring(FSDCurrentReadLine));
+		//	if (FSDCurrentReadLine.size() < 9) FSDHelp::FThrow("Ill formatted line: \n", FSDCurrentReadLine);
+
+		//	int typeCode = static_cast<int>(FSDCurrentReadLine[0]);
+		//	FSDCurrentReadLine.erase(FSDCurrentReadLine[0]);
+		//	FSDSpecializationJuncture(typeCode, ESDSpecializations::createStaticData);
+		//}
+		////FSDStaticData.dataIsSet = true;
+		//UE_LOG(LogTemp, Warning, TEXT("---------> Successfully parsed static data."));
+
+		FString filePath = FPaths::Combine(FPaths::GameSourceDir(), FApp::GetProjectName(), TEXT("StaticData.txt"));
+		UE_LOG(LogTemp, Warning, TEXT("---------> Combined file path:\n%s"), *filePath);
+		IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
+		FString FileContent;
+
+		if (FileManager.FileExists(*filePath))
 		{
-			if (FSDCurrentReadLine.size() < 9) FSDHelp::FThrow("Ill formatted line: \n", FSDCurrentReadLine);
-
-			int typeCode = static_cast<int>(FSDCurrentReadLine[0]);
-			FSDCurrentReadLine.erase(FSDCurrentReadLine[0]);
-			FSDSpecializationJuncture(typeCode, ESDSpecializations::createStaticData);
+			if (FFileHelper::LoadFileToString(FileContent, *filePath, FFileHelper::EHashOptions::None))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("---------> FileManipulation: Text From File: %s"), *FileContent);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("---------> FileManipulation: Did not load text from file"));
+			}
 		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("---------> FileManipulation: File does not exist"));
+		}
+
+		//FString fn = "C:\\Users\\Bartosz\\Documents\\Unreal Projects\\ActorTestProj\\Source\\ActorTestProj\\StaticData";
+		//const TCHAR* fileName = *fn;
+		/**
+			None                = 0,
+			NoFail              = 1 << 0,
+			Silent              = 1 << 1,
+			AllowWrite          = 1 << 2
+		 */
+		//FFileHelper::LoadFileToString(FileContent, fileName, FFileHelper::EHashOptions::EnableVerify, 1);
+		//UE_LOG(LogTemp, Warning, TEXT("---------> Successfully read static data file: \n%s"), *fileName);
 	};
 
 	static void SaveStaticData() {
