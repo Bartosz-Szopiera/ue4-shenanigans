@@ -143,7 +143,7 @@ public:
 	static void FSDSetInstancePropertyFromString(TArray<T>& instanceProperty, std::string value) {
 		T newItem;
 		FSDSetInstancePropertyFromString(newItem, value);
-		instanceProperty.Append(newItem);
+		instanceProperty.Add(newItem);
 	};
 	static void FSDSetInstancePropertyFromString(int32& instanceProperty, std::string value) {
 		instanceProperty = FSDGetValueFromString<int32>(value);
@@ -162,13 +162,18 @@ public:
 	 * It's about getting prop value for the purpose of encoding in string
 	 */
 	template<class T>
-	static void FSDSetPropValueFromInstanceProp(TArray<T> source, FSDInstanceProp& prop) {
-		prop.isArray = true;
-		for (T& value : source) { prop.propValues.push_back(FSDHelp::FSDGetStringFromValue(value)); };
+	static void FSDSetPropValueFromInstanceProp(TArray<T> sourceProp, FSDInstanceProp& targetProp) {
+		targetProp.isArray = true;
+		UE_LOG(LogTemp, Warning, TEXT("---------> Recognized array"));
+		for (auto& value : sourceProp) {
+			std::string newVal = FSDHelp::FSDGetStringFromValue(value);
+			UE_LOG(LogTemp, Warning, TEXT("---------> Got value for array property: %s"), *FSDHelp::FSDCastStdStringToFstring(newVal));
+			targetProp.propValues.push_back(newVal);
+		};
 	};
 	template<class T>
-	static void FSDSetPropValueFromInstanceProp(T source, FSDInstanceProp& prop) {
-		prop.isArray = false;
-		prop.propValues.push_back(FSDHelp::FSDGetStringFromValue(source));
+	static void FSDSetPropValueFromInstanceProp(T sourceProp, FSDInstanceProp& targetProp) {
+		targetProp.isArray = false;
+		targetProp.propValues.push_back(FSDHelp::FSDGetStringFromValue(sourceProp));
 	};
 };

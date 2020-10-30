@@ -23,8 +23,6 @@ enum class ESDValueTypes {
 enum class ESDTypes {
 	type1 = 0,
 	type2,
-	type3,
-	type4,
 };
 
 struct FType1Data {

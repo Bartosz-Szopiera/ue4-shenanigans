@@ -14,7 +14,8 @@ public:
 
 	static FString FSDCurrentReadLine;
 
-	static std::ofstream FSDCurrentSaveFile;
+	//static std::ofstream FSDCurrentSaveFile;
+	static FString FSDCurrentSaveFile;
 
 	static bool staticDataLoaded() {
 		FString text = FSDStaticData.dataIsSet ? "YES" : "NO";
@@ -76,6 +77,9 @@ public:
 				// Announce that static data is ready
 				UE_LOG(LogTemp, Warning, TEXT("---------> Announcing that static data is ready"));
 				FSDStaticData.dataIsSet = true;
+
+				UE_LOG(LogTemp, Warning, TEXT("---------> Now saving data sjust for laughs!! LOL. Kernel gonna kill me."));
+				SaveStaticData();
 			}
 			else
 			{
@@ -88,14 +92,38 @@ public:
 	};
 
 	static void SaveStaticData() {
-		FSDCurrentSaveFile.open("StaticDataOut.txt");
-
+		// First writing to string
 		for (int i = 0; i <= static_cast<int>(ESDTypes::type2); i++)
 		{
 			FSDSpecializationJuncture(i, ESDSpecializations::saveStaticData);
 		}
 
-		FSDCurrentSaveFile.close();
+		UE_LOG(LogTemp, Warning, TEXT("---------> File to save:\n%s"), *FSDCurrentSaveFile);
+
+		FString filePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("StaticData.txt"));
+		UE_LOG(LogTemp, Warning, TEXT("---------> Combined file path:\n%s"), *filePath);
+		IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
+		FString FileContent;
+
+		if (FileManager.FileExists(*filePath))
+		{
+			// We use the LoadFileToString to load the file into
+			if (FFileHelper::SaveStringToFile(FSDCurrentSaveFile, *filePath))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("FileManipulation: Sucsesfuly Written: \"%s\" to the text file"), *FSDCurrentSaveFile);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("FileManipulation: Failed to write FString to file."));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("FileManipulation: ERROR: Can not read the file because it was not found."));
+			UE_LOG(LogTemp, Warning, TEXT("FileManipulation: Expected file location: %s"), *filePath);
+		}
+
+		FSDCurrentSaveFile = TEXT("");
 	};
 
 	template<ESDTypes E>
@@ -109,13 +137,15 @@ public:
 		else if (spec == ESDSpecializations::saveStaticData) {
 			TMap<int32, FSDTypeData<E>> typeData = GetTypeData<E>();
 
-			std::string line;
-			for (auto& inst : typeData)
+			FString line;
+			for (auto& tuple : typeData)
 			{
-				line.append(FEncodeInstanceData<E>(inst.Value));
-				line.push_back('\n');
-				FSDCurrentSaveFile << line;
-				line.clear();
+				FSDTypeData<E>& inst = tuple.Value;
+				line = FSDHelp::FSDCastStdStringToFstring(FEncodeInstanceData<E>(inst));
+				//line.push_back('\n');
+				line.Append(TEXT("\n"));
+				//FSDCurrentSaveFile << line;
+				FSDCurrentSaveFile.Append(line);
 			}
 		}
 	};
@@ -123,7 +153,7 @@ public:
 	template<ESDTypes E>
 	static std::string FEncodeInstanceData(FSDTypeData<E>& inst) {
 		std::vector<FSDInstanceProp> instProps;
-		FSDManager::FSDInstanceAction<E>(inst, instProps, ESDInstanceAction::writeToString);
+		FSDInstanceAction<E>(inst, instProps, ESDInstanceAction::writeToString);
 
 		std::string encodedInstance;
 
@@ -146,12 +176,14 @@ public:
 				encodedInstance.push_back(tokenDelimiter);
 
 				for (auto value : prop.propValues) {
+					UE_LOG(LogTemp, Warning, TEXT("---------> Iterating over one of the values: %s"), *FSDHelp::FSDCastStdStringToFstring(value));
 					encodedInstance.append(value);
 					encodedInstance.push_back(tokenDelimiter);
 				}
 			}
 			else {
 				encodedInstance.append(prop.propValues[0]);
+				encodedInstance.push_back(tokenDelimiter);
 			}
 
 			encodedInstance.push_back(propDelimiter);
@@ -185,7 +217,9 @@ public:
 			}
 			else { // array
 				prop.isArray = true;
+				UE_LOG(LogTemp, Warning, TEXT("---------> About to write values for property containing array."));
 				for (int i = 0; (i + 3) < propDescriptors.chunks.size(); ++i) {
+					UE_LOG(LogTemp, Warning, TEXT("---------> Writing array value into Static Data instance property: %s"), *FSDHelp::FSDCastStdStringToFstring(propDescriptors.chunks[i + 3]));
 					prop.propValues.push_back(propDescriptors.chunks[i + 3]);
 				}
 			}
@@ -209,9 +243,11 @@ public:
 	template<class T>
 	static void FSDPropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, ESDInstanceAction action) {
 		if (action == ESDInstanceAction::writeToInstance) {
+			UE_LOG(LogTemp, Warning, TEXT("---------> Trying to write to instance prop: %s."), *FSDHelp::FSDCastStdStringToFstring(propName));
 			for (FSDInstanceProp prop : properties) {
 				if (propName == prop.propName) {
 					for (int32 i = 0; i < prop.propValues.size(); i++) {
+						UE_LOG(LogTemp, Warning, TEXT("---------> Write to instance value: %s."), *FSDHelp::FSDCastStdStringToFstring(prop.propValues[i]));
 						FSDHelp::FSDSetInstancePropertyFromString(instanceProperty, prop.propValues[i]);
 					}
 					return;
@@ -241,12 +277,6 @@ public:
 		else if (typeCode == static_cast<int>(ESDTypes::type2)) {
 			FSDSpecializedCall<ESDTypes::type2>(spec);
 		}
-		else if (typeCode == static_cast<int>(ESDTypes::type3)) {
-			FSDSpecializedCall<ESDTypes::type2>(spec);
-		}
-		else if (typeCode == static_cast<int>(ESDTypes::type4)) {
-			FSDSpecializedCall<ESDTypes::type2>(spec);
-		}
 	};
 
 	template<ESDTypes E>
@@ -257,7 +287,7 @@ public:
 	typedef std::vector<FSDInstanceProp>& P;
 	typedef ESDInstanceAction A;
 	template<ESDTypes E>
-	static void FSDInstanceAction(FSDTypeData<E>& inst, P instanceProps, A action) {};
+	static void FSDInstanceAction(FSDTypeData<E>& inst, P instProps, A action) {};
 	template<> static void FSDInstanceAction<ESDTypes::type1>(FSDTypeData<ESDTypes::type1>& inst, P instProps, A action) {
 		FSDPropertyAction(inst.prop1, "prop1", instProps, action);
 		FSDPropertyAction(inst.prop2, "prop2", instProps, action);
@@ -267,6 +297,12 @@ public:
 	template<> static void FSDInstanceAction<ESDTypes::type2>(FSDTypeData<ESDTypes::type2>& inst, P instProps, A action) {
 		FSDPropertyAction(inst.prop1, "prop1", instProps, action);
 		FSDPropertyAction(inst.prop2, "prop2", instProps, action);
+		FSDPropertyAction(inst.prop3, "prop3", instProps, action);
+		FSDPropertyAction(inst.prop4, "prop4", instProps, action);
+		FSDPropertyAction(inst.prop5, "prop5", instProps, action);
+		FSDPropertyAction(inst.prop6, "prop6", instProps, action);
+		FSDPropertyAction(inst.prop7, "prop7", instProps, action);
+		FSDPropertyAction(inst.prop8, "prop8", instProps, action);
 		FSDPropertyAction(inst.id, "id", instProps, action);
 		if (action == A::writeToInstance) FSDStaticData.type2.Add(inst.id, inst);
 	};

@@ -35,4 +35,5 @@ FStaticData FSDManager::FSDStaticData;
 
 FString FSDManager::FSDCurrentReadLine;
 
-std::ofstream FSDManager::FSDCurrentSaveFile;
+//std::ofstream FSDManager::FSDCurrentSaveFile;
+FString FSDManager::FSDCurrentSaveFile;
