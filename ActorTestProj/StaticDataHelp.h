@@ -14,10 +14,11 @@ public:
 		return FString(value.c_str());
 	};
 
-	static void FThrow(std::string s1 = "", std::string s2 = "", std::string s3 = "") {
-		std::string end = '\n' + "---------------------------------------------" + '\n';
-		std::string text = s1 + s2 + s3;
-		throw (text + end);
+	static void FThrow(FString s1 = TEXT(""), FString s2 = TEXT(""), FString s3 = TEXT("")) {
+		FString end = TEXT("\n---------------------------------------------\n");
+		FString text = s1.Append(s2).Append(s3).Append(end);
+		UE_LOG(LogTemp, Warning, TEXT("---------> Exception: %s"), *text);
+		throw;
 	};
 
 	static int32 FSDCastStdStringToInt32(std::string value) {
@@ -58,7 +59,6 @@ public:
 	};
 
 	static std::string FSDCastFstringToStdString(FString source) {
-		FString fstr;
 		return std::string(TCHAR_TO_UTF8(*source));
 	};
 
@@ -89,6 +89,7 @@ public:
 
 		auto saveChunk = [&]() {
 			int32 length = chunkEnd - chunkStart;
+			UE_LOG(LogTemp, Warning, TEXT("---------> Extracting chunk: %s"), *FSDHelp::FSDCastStdStringToFstring(data.substr(chunkStart, length)));
 			extracted.chunks.push_back(data.substr(chunkStart, length));
 			extracted.count++;
 		};
@@ -96,9 +97,12 @@ public:
 		for (char c : data) {
 			if (c == delimiter) {
 				saveChunk();
+				chunkEnd++;
 				chunkStart = chunkEnd;
 			}
-			chunkEnd++;
+			else {
+				chunkEnd++;
+			}
 		};
 
 		return extracted;

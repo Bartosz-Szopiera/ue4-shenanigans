@@ -12,7 +12,7 @@ class FSDManager {
 public:
 	static FStaticData FSDStaticData;
 
-	static std::string FSDCurrentReadLine;
+	static FString FSDCurrentReadLine;
 
 	static std::ofstream FSDCurrentSaveFile;
 
@@ -57,6 +57,35 @@ public:
 			if (FFileHelper::LoadFileToString(FileContent, *filePath, FFileHelper::EHashOptions::None))
 			{
 				UE_LOG(LogTemp, Warning, TEXT("---------> FileManipulation: Text From File: %s"), *FileContent);
+
+				int32 delimPosition;
+				int32 fragmentLength;
+
+				while (FileContent.Len() > 0) {
+					// No instance can be encoded in less than 9 symbols
+
+					// If file ends without end-line get length
+					delimPosition = FileContent.Find(TEXT("\n"));
+					fragmentLength = (delimPosition != -1) ? (delimPosition + 1) : FileContent.Len();
+
+					UE_LOG(LogTemp, Warning, TEXT("---------> Delimiter position: %i"), delimPosition);
+
+					// Get characters from left and remove end-line if it was there
+					FSDCurrentReadLine = FileContent.Left(fragmentLength);
+
+					if (FSDCurrentReadLine.Len() < 9) { FSDHelp::FThrow(TEXT("Ill formatted line: "), FSDCurrentReadLine); };
+
+					FileContent.RightChopInline(FSDCurrentReadLine.Len(), true);
+
+					// Now delimited is on the beginning and me need to remove it!
+					FileContent.RemoveFromStart(TEXT("\n"));
+
+					UE_LOG(LogTemp, Warning, TEXT("---------> Parsing line: %s"), *FSDCurrentReadLine);
+					UE_LOG(LogTemp, Warning, TEXT("---------> Remaining file: %s"), *FileContent);
+
+					int32 typeCode = static_cast<int32>(FCString::Atoi(*(FSDCurrentReadLine.RightChop(1))));
+					FSDSpecializationJuncture(typeCode, ESDSpecializations::createStaticData);
+				}
 			}
 			else
 			{
@@ -66,6 +95,7 @@ public:
 		else {
 			UE_LOG(LogTemp, Warning, TEXT("---------> FileManipulation: File does not exist"));
 		}
+
 
 		//FString fn = "C:\\Users\\Bartosz\\Documents\\Unreal Projects\\ActorTestProj\\Source\\ActorTestProj\\StaticData";
 		//const TCHAR* fileName = *fn;
@@ -154,14 +184,17 @@ public:
 	};
 
 	static std::vector<FSDInstanceProp> FDecodeInstanceData() {
-		std::string encodedInstance = FSDCurrentReadLine;
-		FSDHelp::FSDExtractedChunks instancePropsChunks = FSDHelp::FSDExtractChunks(encodedInstance);
+		//FString encodedInstance = FSDCurrentReadLine;
+		FSDHelp::FSDExtractedChunks instancePropsChunks = FSDHelp::FSDExtractChunks(
+			FSDHelp::FSDCastFstringToStdString(FSDCurrentReadLine)
+		);
 
 		std::vector<FSDInstanceProp> instanceProps;
 
 		// Parsing prop by prop
 		for (std::string propChunk : instancePropsChunks.chunks) {
 			FSDInstanceProp prop;
+			UE_LOG(LogTemp, Warning, TEXT("---------> Parsing prop chunk: %s"), *FSDHelp::FSDCastStdStringToFstring(propChunk));
 
 			FSDHelp::FSDExtractedChunks propDescriptors = FSDHelp::FSDExtractChunks(propChunk, ',');
 
