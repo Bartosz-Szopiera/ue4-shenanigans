@@ -5,19 +5,7 @@
 #include "Misc/DefaultValueHelper.h"
 
 FString castStdStringToFstring(std::string value) {
-	try
-	{
-		return FString(value.c_str());
-	}
-	catch (const std::exception& exc)
-	{
-		FString fstr1 = FString(value.c_str());
-		//std::string excStr = *exc.what()
-		//FString fstrExc = FString(excStr.c_str());
-		//UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting '%s' to FString. Exception: %s"), value, exc.what());
-		UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Failed casting '%s' to FString. Exception: %s"), *fstr1, *exc.what());
-		return (FString)"0conversionError";
-	}
+	return FString(value.c_str());
 };
 
 int32 castStdStringToInt32(std::string value) {
@@ -45,6 +33,7 @@ bool castStdStringToBool(std::string value) {
 	else if (value == "false") {
 		return false;
 	}
+	return false;
 };
 
 std::string castInt32ToStdString(int32 source) {

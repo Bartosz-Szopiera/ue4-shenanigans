@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "StaticData.h"
+//#include "StaticData.h"
 #include "MyBlueprintFunctionLibrary.generated.h"
 
 /**

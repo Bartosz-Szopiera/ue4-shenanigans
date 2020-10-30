@@ -15,8 +15,8 @@ enum class ESDTypes {
 };
 
 enum class EInstanceAction {
-	toString,
-	toInstance,
+	writeToString,
+	writeToInstance,
 };
 
 struct FType1Data {

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "StaticData.h"
+//#include "StaticData.h"
 #include "MyGameInstance.generated.h"
 
 /**
@@ -17,7 +17,7 @@ class ACTORTESTPROJ_API UMyGameInstance : public UGameInstance
 
 public:
 
-	virtual FStaticData GetStaticData();
+	//virtual FStaticData GetStaticData();
 
 private:
 
