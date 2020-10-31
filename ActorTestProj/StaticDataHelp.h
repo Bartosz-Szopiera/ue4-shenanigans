@@ -130,11 +130,14 @@ public:
 	 * 
 	 */
 	template<class T>
-	static ESDValueTypes FSDGetValueTypeFromInstProp() { return ESDValueTypes::int32; };
-	template<> static ESDValueTypes FSDGetValueTypeFromInstProp<int32>() { return ESDValueTypes::int32; };
-	template<> static ESDValueTypes FSDGetValueTypeFromInstProp<float>() { return ESDValueTypes::flt; };
-	template<> static ESDValueTypes FSDGetValueTypeFromInstProp<FString>() { return ESDValueTypes::string; };
-	template<> static ESDValueTypes FSDGetValueTypeFromInstProp<bool>() { return ESDValueTypes::boolean; };
+	static ESDValueTypes FSDGetValueTypeFromInstProp() {
+		if (std::is_same<T, int32>::value || std::is_same<T, TArray<int32>>::value)		return ESDValueTypes::int32;
+		if (std::is_same<T, float>::value || std::is_same<T, TArray<float>>::value)		return ESDValueTypes::flt;
+		if (std::is_same<T, FString>::value || std::is_same<T, TArray<FString>>::value)	return ESDValueTypes::string;
+		if (std::is_same<T, bool>::value || std::is_same<T, TArray<bool>>::value)		return ESDValueTypes::boolean;
+		FThrow(TEXT("Could not match value type with instance property value. Defaults to int32."));
+		return ESDValueTypes::int32;
+	};
 
 	/**
 	 * 

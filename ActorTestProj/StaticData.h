@@ -142,9 +142,6 @@ public:
 			{
 				FSDTypeData<E>& inst = tuple.Value;
 				line = FSDHelp::FSDCastStdStringToFstring(FEncodeInstanceData<E>(inst));
-				//line.push_back('\n');
-				line.Append(TEXT("\n"));
-				//FSDCurrentSaveFile << line;
 				FSDCurrentSaveFile.Append(line);
 			}
 		}
@@ -159,10 +156,11 @@ public:
 
 		char propDelimiter = ';';
 		char tokenDelimiter = ',';
-		std::string typeCode = std::to_string(static_cast<int>(E));
+		std::string instanceTypeCode = std::to_string(static_cast<int>(E));
 		std::string propName;
 
-		encodedInstance.append(typeCode);
+		encodedInstance.append(instanceTypeCode);
+		encodedInstance.push_back(tokenDelimiter);
 		encodedInstance.push_back(propDelimiter);
 
 		for (auto prop : instProps) {
