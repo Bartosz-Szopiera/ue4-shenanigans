@@ -19,4 +19,26 @@ public:
 		UE_LOG(LogTemp, Warning, TEXT("---------> Is data set?: %s"), *text);
 		return StaticData.dataIsReady;
 	};
+
+	struct FSDInstanceProp {
+		std::string propName;
+		FSD::ValueTypes propValueType;
+		std::vector<std::string> propValues;
+		bool isArray = false;
+	};
+
+	struct FSDTypeBase {
+		int32 id;
+		bool meta_isBound;
+	};
+
+	enum class ESDInstanceAction {
+		savingStaticData,
+		loadingStaticData,
+	};
+
+	enum class ESDSpecializations {
+		createStaticData,
+		saveStaticData,
+	};
 };
