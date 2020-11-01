@@ -4,8 +4,8 @@
 //#include "StaticDataTypes.generated.h"
 
 enum class ESDInstanceAction {
-	writeToString,
-	writeToInstance,
+	savingStaticData,
+	loadingStaticData,
 };
 
 enum class ESDSpecializations {
@@ -18,6 +18,20 @@ enum class ESDValueTypes {
 	flt,
 	string,
 	boolean,
+	ETestEnum,
+};
+
+struct FSDInstanceProp {
+	std::string propName;
+	ESDValueTypes propValueType;
+	std::vector<std::string> propValues;
+	bool isArray = false;
+};
+
+enum class ETestEnum {
+	testValue1 = 0,
+	testValue2,
+	testValue3,
 };
 
 enum class ESDTypes {
@@ -43,13 +57,6 @@ struct FType2Data {
 	TArray<bool> prop8;
 };
 
-struct FSDInstanceProp {
-	std::string propName;
-	ESDValueTypes propValueType;
-	std::vector<std::string> propValues;
-	bool isArray = false;
-};
-
 template<ESDTypes E>
 struct FSDTypeData {
 	int32 id;
@@ -73,5 +80,5 @@ struct FStaticData {
 	TMap<int32, FSDTypeData<ESDTypes::type1>> type1;
 	TMap<int32, FSDTypeData<ESDTypes::type2>> type2;
 
-	bool dataIsSet;
+	bool dataIsReady;
 };

@@ -7,10 +7,10 @@
 UMyGameInstance::UMyGameInstance() {
 	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] About to set static data"));
 
-	FSDManager::FSetStaticData();
+	FSDManager::SetStaticData();
 };
 
 //FStaticData UMyGameInstance::GetStaticData() {
-//	return FSDManager::FSDStaticData;
+//	return FSDManager::StaticData;
 //}
 

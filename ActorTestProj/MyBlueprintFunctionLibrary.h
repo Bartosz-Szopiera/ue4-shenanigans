@@ -19,7 +19,7 @@ public:
 
 	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
 	static FStaticData GetStaticData() {
-		return FSDManager::FSDStaticData;
+		return FSDManager::StaticData;
 	}*/
 
 	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
