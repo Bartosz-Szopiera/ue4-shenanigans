@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "StaticData.h"
+#include "SDCore.h"
 
 /**
 *
@@ -31,8 +31,8 @@
 /**
  * Initializing static data
  */
-FStaticData FSDStore::StaticData;
+FStaticData FSDCore::StaticData;
 
-FString FSDStore::CurrentInstanceString;
+FString FSDCore::CurrentInstanceString;
 
-FString FSDStore::StaticDataFString;
+FString FSDCore::StaticDataFString;

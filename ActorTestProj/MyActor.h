@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "StaticDataProvider.h"
+#include "SDProvider.h"
 #include "MyActor.generated.h"
 
 UCLASS()

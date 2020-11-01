@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StaticData.h"
+#include "SDCore.h"
 
 class STDPropertyAction {
 public:

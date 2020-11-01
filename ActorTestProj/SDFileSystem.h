@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include "StaticData.h"
-#include "StaticDataJuncture.gen.h"
+#include "SDCore.h"
+#include "SDJuncture.gen.h"
 
 class FSDFSActions {
 public:
@@ -50,10 +50,10 @@ public:
 			delimPosIndex = FileContent.Find(delim);
 			symbolCount = (delimPosIndex != -1) ? (delimPosIndex + 1) : FileContent.Len();
 			UE_LOG(LogTemp, Warning, TEXT("---------> Delimiter position: %i"), delimPosIndex);
-			if (symbolCount < minLineLength) FSDUtil::Throw(TEXT("Ill formatted line: "), FSDStore::CurrentInstanceString);
+			if (symbolCount < minLineLength) FSDUtil::Throw(TEXT("Ill formatted line: "), FSDCore::CurrentInstanceString);
 
-			FSDStore::CurrentInstanceString = FileContent.Left(symbolCount); // save fragment
-			FSDStore::CurrentInstanceString.RemoveFromEnd(TEXT("\n")); // try to remove just in case
+			FSDCore::CurrentInstanceString = FileContent.Left(symbolCount); // save fragment
+			FSDCore::CurrentInstanceString.RemoveFromEnd(TEXT("\n")); // try to remove just in case
 
 			/**
 			 * This could actually be slowing process down. Potentially remove later.
@@ -61,17 +61,17 @@ public:
 			FileContent.RightChopInline(symbolCount, true); // remove fragment from variable and free space
 			FileContent.RemoveFromStart(TEXT("\n")); // try to remove just in case
 
-			UE_LOG(LogTemp, Warning, TEXT("---------> Parsing line: %s"), *FSDStore::CurrentInstanceString);
+			UE_LOG(LogTemp, Warning, TEXT("---------> Parsing line: %s"), *FSDCore::CurrentInstanceString);
 			UE_LOG(LogTemp, Warning, TEXT("---------> Remaining file: %s"), *FileContent);
 
-			typeCode = FCString::Atoi(*(FSDStore::CurrentInstanceString.Left(1))); // read type
-			FSDStore::CurrentInstanceString.RightChopInline(3, true); // remove type -> typeCode + "," + ";" = 3 symbols
+			typeCode = FCString::Atoi(*(FSDCore::CurrentInstanceString.Left(1))); // read type
+			FSDCore::CurrentInstanceString.RightChopInline(3, true); // remove type -> typeCode + "," + ";" = 3 symbols
 
 			FSDJuncture::FSDSpecializationJuncture(static_cast<int32>(typeCode), ESDSpecializations::createStaticData);
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("---------> Static data was loaded with success."));
-		FSDStore::StaticData.dataIsReady = true;
+		FSDCore::StaticData.dataIsReady = true;
 
 		UE_LOG(LogTemp, Warning, TEXT("---------> Now saving data sjust for laughs!! LOL. Kernel gonna kill me."));
 		SaveStaticData();
@@ -82,7 +82,7 @@ public:
 		for (int i = 0; i <= static_cast<int>(FSD::Types::type2); i++) {
 			FSDJuncture::FSDSpecializationJuncture(i, ESDSpecializations::saveStaticData);
 		}
-		UE_LOG(LogTemp, Warning, TEXT("---------> File to save:\n%s"), *FSDStore::StaticDataFString);
+		UE_LOG(LogTemp, Warning, TEXT("---------> File to save:\n%s"), *FSDCore::StaticDataFString);
 
 		FString filePath = GetStaticDataLoadPath();
 		IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
@@ -92,16 +92,16 @@ public:
 			UE_LOG(LogTemp, Warning, TEXT("---------> Static Data file already exists."));
 			return;
 		}
-		if (FFileHelper::SaveStringToFile(FSDStore::StaticDataFString, *filePath)) {
+		if (FFileHelper::SaveStringToFile(FSDCore::StaticDataFString, *filePath)) {
 			UE_LOG(LogTemp, Warning, TEXT("---------> Successfully written to the text file"));
 			if (debug) {
-				UE_LOG(LogTemp, Warning, TEXT("---------> File contentents:\n%s"), *FSDStore::StaticDataFString);
+				UE_LOG(LogTemp, Warning, TEXT("---------> File contentents:\n%s"), *FSDCore::StaticDataFString);
 			}
 		}
 		else {
 			UE_LOG(LogTemp, Warning, TEXT("---------> Failed to write to StaticData file."));
 		}
 
-		FSDStore::StaticDataFString = TEXT("");
+		FSDCore::StaticDataFString = TEXT("");
 	};
 };

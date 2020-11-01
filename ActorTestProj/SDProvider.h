@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StaticDataGetInstance.h"
+#include "SDGetInstance.h"
 
 template<FSD::Types T>
 class FSDProvider {

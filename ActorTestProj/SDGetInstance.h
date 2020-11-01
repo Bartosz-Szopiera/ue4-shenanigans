@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include "StaticData.h"
-#include "StaticDataGetTypeData.gen.h"
+#include "SDCore.h"
+#include "SDGetTypeData.gen.h"
 
 class FSDGetInstance {
 public:

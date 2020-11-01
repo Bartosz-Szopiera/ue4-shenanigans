@@ -2,7 +2,7 @@
 
 
 #include "MyGameInstance.h"
-#include "StaticDataFS.h"
+#include "SDFileSystem.h"
 
 UMyGameInstance::UMyGameInstance() {
 	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] About to set static data"));
@@ -11,6 +11,6 @@ UMyGameInstance::UMyGameInstance() {
 };
 
 //FStaticData UMyGameInstance::GetStaticData() {
-//	return FSDStore::StaticData;
+//	return FSDCore::StaticData;
 //}
 

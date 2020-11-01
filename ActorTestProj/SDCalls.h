@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StaticData.h"
-#include "StaticDataTypeAction.gen.h"
-#include "StaticDataGetTypeData.gen.h"
+#include "SDCore.h"
+#include "SDTypeAction.gen.h"
+#include "SDGetTypeData.gen.h"
 
 class STDCalls {
 public:
@@ -22,7 +22,7 @@ public:
 
 	static std::vector<FSDInstanceProp> GetPropFromString() {
 		FSDUtil::ExtractedChunks instancePropsChunks = FSDUtil::ExtractChunks(
-			FSDUtil::FstringToStdString(FSDStore::CurrentInstanceString)
+			FSDUtil::FstringToStdString(FSDCore::CurrentInstanceString)
 		);
 
 		std::vector<FSDInstanceProp> instanceProps;
@@ -65,7 +65,7 @@ public:
 		{
 			FSDTypeData<E>& inst = tuple.Value;
 			line = FSDUtil::StdStringToFstring(FEncodeInstanceData<E>(inst));
-			FSDStore::StaticDataFString.Append(line);
+			FSDCore::StaticDataFString.Append(line);
 		}
 	};
 

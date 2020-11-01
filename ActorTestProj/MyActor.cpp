@@ -1,7 +1,6 @@
 // 2020 Purple Pill Productions.
 
 #include "MyActor.h"
-//#include "StaticData.h"
 
 // Sets default values
 AMyActor::AMyActor():
@@ -65,7 +64,7 @@ void AMyActor::PostLoad()
 
 void AMyActor::MaybeLoadStaticData()
 {
-	if (FSDStore::StaticDataIsReady()) {
+	if (FSDCore::StaticDataIsReady()) {
 		UE_LOG(LogTemp, Warning, TEXT("[MYLOG] --------> Setting static data for actor."));
 		InitializeSD(1);
 		DamageTimeInSeconds = SD.prop1;

@@ -19,12 +19,12 @@ public:
 
 	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
 	static FStaticData GetStaticData() {
-		return FSDStore::StaticData;
+		return FSDCore::StaticData;
 	}*/
 
 	/*UFUNCTION(BlueprintCallable, Category = "Static Data")
 	template<Types E>
 	static FSDTypeData<E> GetTypeInstanceData(Types dataType) {
-		return FSDStore::GetTypeInstanceData<dataType>(1);
+		return FSDCore::GetTypeInstanceData<dataType>(1);
 	};*/
 };

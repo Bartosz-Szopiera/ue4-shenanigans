@@ -1,6 +1,9 @@
 #pragma once
-#include "StaticData.h"
-#include "StaticDataPropAction.h"
+/**
+ * GENERATED FILE
+ */
+#include "SDCore.h"
+#include "SDPropAction.h"
 class STDTypeAction {
 public:
 	typedef std::vector<FSDInstanceProp>& P; // Vector of instance properties
@@ -9,7 +12,7 @@ public:
 		STDPropertyAction::PA(i.id, "id", p, a);
 		STDPropertyAction::PA(i.prop1, "prop1", p, a);
 		STDPropertyAction::PA(i.prop2, "prop2", p, a);
-		if (a == A::loadingStaticData) FSDStore::StaticData.type1.Add(i.id, i);
+		if (a == A::loadingStaticData) FSDCore::StaticData.type1.Add(i.id, i);
 	};
 	static void TypeAction(FSDTypeData<FSD::Types::type2>& i, P p, A a) {
 		STDPropertyAction::PA(i.id, "id", p, a);
@@ -21,6 +24,6 @@ public:
 		STDPropertyAction::PA(i.prop6, "prop6", p, a);
 		STDPropertyAction::PA(i.prop7, "prop7", p, a);
 		STDPropertyAction::PA(i.prop8, "prop8", p, a);
-		if (a == A::loadingStaticData) FSDStore::StaticData.type2.Add(i.id, i);
+		if (a == A::loadingStaticData) FSDCore::StaticData.type2.Add(i.id, i);
 	};
 };

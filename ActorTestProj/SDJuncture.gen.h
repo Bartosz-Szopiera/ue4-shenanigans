@@ -1,5 +1,5 @@
 #pragma once
-#include "StaticDataCalls.h"
+#include "SDCalls.h"
 class FSDJuncture {
 public:
 	static void FSDSpecializationJuncture(int typeCode, ESDSpecializations spec) {
