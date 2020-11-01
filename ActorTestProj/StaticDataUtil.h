@@ -156,13 +156,13 @@ public:
 	 * Conditions need to be extended with each new Value Type
 	 */
 	template<class T>
-	static ESDValueTypes GetValueTypeFromType() {
-		if (std::is_same<T, int32>::value || std::is_same<T, TArray<int32>>::value)		return ESDValueTypes::int32;
-		if (std::is_same<T, float>::value || std::is_same<T, TArray<float>>::value)		return ESDValueTypes::flt;
-		if (std::is_same<T, FString>::value || std::is_same<T, TArray<FString>>::value)	return ESDValueTypes::string;
-		if (std::is_same<T, bool>::value || std::is_same<T, TArray<bool>>::value)		return ESDValueTypes::boolean;
+	static FSD::ValueTypes GetValueTypeFromType() {
+		if (std::is_same<T, int32>::value || std::is_same<T, TArray<int32>>::value)		return FSD::ValueTypes::int32;
+		if (std::is_same<T, float>::value || std::is_same<T, TArray<float>>::value)		return FSD::ValueTypes::flt;
+		if (std::is_same<T, FString>::value || std::is_same<T, TArray<FString>>::value)	return FSD::ValueTypes::string;
+		if (std::is_same<T, bool>::value || std::is_same<T, TArray<bool>>::value)		return FSD::ValueTypes::boolean;
 		Throw(TEXT("Could not match value type with instance property value. Defaults to int32."));
-		return ESDValueTypes::int32;
+		return FSD::ValueTypes::int32;
 	};
 
 	/**

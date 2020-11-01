@@ -1,50 +1,33 @@
 
 #pragma once
 
-//#include "StaticDataTypes.generated.h"
-
-enum class ESDValueTypes {
-	int32 = 0,
-	flt,
-	string,
-	boolean,
-};
+#include "Types.gen.h"
 
 struct FSDInstanceProp {
 	std::string propName;
-	ESDValueTypes propValueType;
+	FSD::ValueTypes propValueType;
 	std::vector<std::string> propValues;
 	bool isArray = false;
 };
 
-enum class ESDTypes {
-	type1 = 0,
-	type2,
-	type3,
-};
-
-struct FType1Data {
+struct FSDTypeBase {
 	int32 id;
-	int32 prop1;
-	int32 prop2;
+	bool meta_isBound;
 };
 
-struct FType2Data {
-	int32 id;
-	int32 prop1;
-	float prop2;
-	FString prop3;
-	bool prop4;
-	TArray<int32> prop5;
-	TArray<float> prop6;
-	TArray<FString> prop7;
-	TArray<bool> prop8;
+enum class ESDInstanceAction {
+	savingStaticData,
+	loadingStaticData,
 };
 
-template<ESDTypes E>
+enum class ESDSpecializations {
+	createStaticData,
+	saveStaticData,
+};
+
+template<FSD::Types E>
 struct FSDTypeData {
-	int32 id;
-
+public:
 	friend int32 GetTypeHash(const FSDTypeData<E>& myStruct) {
 		return myStruct.id;
 	};
@@ -54,15 +37,15 @@ struct FSDTypeData {
 		return LHS.id == RHS.id;
 	};
 };
-template<> struct FSDTypeData<ESDTypes::type1> : public FType1Data {};
-template<> struct FSDTypeData<ESDTypes::type2> : public FType2Data {};
+template<> struct FSDTypeData<FSD::Types::type1> : public FSDTypeBase, public FSD::FType1Data {};
+template<> struct FSDTypeData<FSD::Types::type2> : public FSDTypeBase, public FSD::FType2Data {};
 
 //USTRUCT(BlueprintType)
 struct FStaticData {
 	//GENERATED_BODY()
 
-	TMap<int32, FSDTypeData<ESDTypes::type1>> type1;
-	TMap<int32, FSDTypeData<ESDTypes::type2>> type2;
+	TMap<int32, FSDTypeData<FSD::Types::type1>> type1;
+	TMap<int32, FSDTypeData<FSD::Types::type2>> type2;
 
 	bool dataIsReady;
 };

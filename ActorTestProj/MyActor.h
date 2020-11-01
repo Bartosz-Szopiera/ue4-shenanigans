@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "StaticDataProvider.h"
 #include "MyActor.generated.h"
 
 UCLASS()
-class ACTORTESTPROJ_API AMyActor : public AActor
+class ACTORTESTPROJ_API AMyActor : public AActor, public FSDProvider<FSD::Types::type1>
 {
 	GENERATED_BODY()
 	

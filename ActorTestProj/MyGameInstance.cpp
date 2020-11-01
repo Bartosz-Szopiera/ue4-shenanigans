@@ -2,15 +2,15 @@
 
 
 #include "MyGameInstance.h"
-#include "StaticData.h"
+#include "StaticDataFS.h"
 
 UMyGameInstance::UMyGameInstance() {
 	UE_LOG(LogTemp, Warning, TEXT("[MYLOG] About to set static data"));
 
-	FSDManager::SetStaticData();
+	FSDFSActions::LoadStaticData();
 };
 
 //FStaticData UMyGameInstance::GetStaticData() {
-//	return FSDManager::StaticData;
+//	return FSDStore::StaticData;
 //}
 

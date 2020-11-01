@@ -13,10 +13,10 @@
  * ; - properties delimiter
  * , - delimiter of tokens within property
  *
- * 0 - first zero - it's numerical value of type according to ESDTypes
+ * 0 - first zero - it's numerical value of type according to Types
  *
  * ;0,prop1Name,1347,; - this is first property
- *		0			- numerical value of type of value held according to ESDValueTypes
+ *		0			- numerical value of type of value held according to ValueTypes
  *		prop1Name	- property name
  *		1347		- value
  *
@@ -31,8 +31,8 @@
 /**
  * Initializing static data
  */
-FStaticData FSDManager::StaticData;
+FStaticData FSDStore::StaticData;
 
-FString FSDManager::CurrentInstanceString;
+FString FSDStore::CurrentInstanceString;
 
-FString FSDManager::StaticDataFString;
+FString FSDStore::StaticDataFString;
