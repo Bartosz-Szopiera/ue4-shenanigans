@@ -5,20 +5,13 @@
 #include <vector>
 #include "Misc/DefaultValueHelper.h"
 
-class FSDHelp {
+class FSDUtil {
 public:
 	/**
-	 * Casting from strings
+	 * Casting from strings to value types
 	 */
 	static FString StdStringToFstring(std::string value) {
 		return FString(value.c_str());
-	};
-
-	static void Throw(FString s1 = TEXT(""), FString s2 = TEXT(""), FString s3 = TEXT("")) {
-		FString end = TEXT("\n---------------------------------------------\n");
-		FString text = s1.Append(s2).Append(s3);
-		UE_LOG(LogTemp, Warning, TEXT("%s---------> Exception:\n%s\n"),*end, *text);
-		throw;
 	};
 
 	static int32 StdStringToInt32(std::string value) {
@@ -76,6 +69,17 @@ public:
 	 * 
 	 */
 
+	static void Throw(FString s1 = TEXT(""), FString s2 = TEXT(""), FString s3 = TEXT("")) {
+		FString end = TEXT("\n---------------------------------------------\n");
+		FString text = s1.Append(s2).Append(s3);
+		UE_LOG(LogTemp, Warning, TEXT("%s---------> Exception:\n%s\n"), *end, *text);
+		throw;
+	};
+
+	/**
+	 * 
+	 */
+
 	static struct ExtractedChunks {
 		std::vector<std::string> chunks;
 		int32 count;
@@ -89,7 +93,7 @@ public:
 
 		auto saveChunk = [&]() {
 			int32 length = chunkEnd - chunkStart;
-			UE_LOG(LogTemp, Warning, TEXT("---------> Extracting chunk: %s"), *FSDHelp::StdStringToFstring(data.substr(chunkStart, length)));
+			UE_LOG(LogTemp, Warning, TEXT("---------> Extracting chunk: %s"), *FSDUtil::StdStringToFstring(data.substr(chunkStart, length)));
 			extracted.chunks.push_back(data.substr(chunkStart, length));
 			extracted.count++;
 		};
@@ -109,7 +113,7 @@ public:
 	};
 
 	/**
-	 * Used during decoding
+	 * Used for loading SD
 	 */
 	template<class T>
 	static T GetValueFromStdString(std::string source) { return StdStringToInt32(source); };
@@ -119,7 +123,7 @@ public:
 	template<> static bool GetValueFromStdString<bool>(std::string source) { return StdStringToBool(source); };
 
 	/**
-	 * Used during encoding
+	 * Used for saving SD
 	 */
 	static std::string GetStringFromValue(int32 source) { return Int32ToStdString(source); };
 	static std::string GetStringFromValue(float source) { return FloatToStdString(source); };
@@ -127,7 +131,29 @@ public:
 	static std::string GetStringFromValue(bool source) { return BoolToStdString(source); };
 
 	/**
-	 * Used during encoding
+	 * It's about getting prop value for the purpose of encoding in string
+	 */
+	template<class T>
+	static void ToStdStringAndAssign(TArray<T> sourceProp, FSDInstanceProp& targetProp) {
+		targetProp.isArray = true;
+		UE_LOG(LogTemp, Warning, TEXT("---------> Recognized array"));
+		std::string newVal;
+		for (auto& value : sourceProp) {
+			newVal = FSDUtil::GetStringFromValue(value);
+			UE_LOG(LogTemp, Warning, TEXT("---------> Got value for array property: %s"), *FSDUtil::StdStringToFstring(newVal));
+			targetProp.propValues.push_back(newVal);
+		};
+	};
+	template<class T>
+	static void ToStdStringAndAssign(T sourceProp, FSDInstanceProp& targetProp) {
+		targetProp.isArray = false;
+		targetProp.propValues.push_back(FSDUtil::GetStringFromValue(sourceProp));
+	};
+
+	/**
+	 * Used for saving SD
+	 * 
+	 * Conditions need to be extended with each new Value Type
 	 */
 	template<class T>
 	static ESDValueTypes GetValueTypeFromType() {
@@ -138,9 +164,11 @@ public:
 		Throw(TEXT("Could not match value type with instance property value. Defaults to int32."));
 		return ESDValueTypes::int32;
 	};
-	
+
 	/**
+	 * USed for loading SD
 	 * 
+	 * This overloads need to be extended with each new Value Type
 	 */
 	template<class T>
 	static void SetEntityValueFromStdString(TArray<T>& instanceProperty, std::string value) {
@@ -159,24 +187,5 @@ public:
 	};
 	static void SetEntityValueFromStdString(bool& instanceProperty, std::string value) {
 		instanceProperty = GetValueFromStdString<bool>(value);
-	};
-
-	/**
-	 * It's about getting prop value for the purpose of encoding in string
-	 */
-	template<class T>
-	static void ToStdStringAndAssign(TArray<T> sourceProp, FSDInstanceProp& targetProp) {
-		targetProp.isArray = true;
-		UE_LOG(LogTemp, Warning, TEXT("---------> Recognized array"));
-		for (auto& value : sourceProp) {
-			std::string newVal = FSDHelp::GetStringFromValue(value);
-			UE_LOG(LogTemp, Warning, TEXT("---------> Got value for array property: %s"), *FSDHelp::StdStringToFstring(newVal));
-			targetProp.propValues.push_back(newVal);
-		};
-	};
-	template<class T>
-	static void ToStdStringAndAssign(T sourceProp, FSDInstanceProp& targetProp) {
-		targetProp.isArray = false;
-		targetProp.propValues.push_back(FSDHelp::GetStringFromValue(sourceProp));
 	};
 };

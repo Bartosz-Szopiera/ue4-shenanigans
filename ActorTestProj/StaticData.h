@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include "StaticDataTypes.h"
-#include "StaticDataHelp.h"
+#include "StaticDataUtil.h"
 
 class FSDManager {
 public:
@@ -15,6 +15,16 @@ public:
 	static FString CurrentInstanceString;
 
 	static FString StaticDataFString;
+
+	enum class ESDInstanceAction {
+		savingStaticData,
+		loadingStaticData,
+	};
+
+	enum class ESDSpecializations {
+		createStaticData,
+		saveStaticData,
+	};
 
 	static bool StaticDataIsReady() {
 		FString text = StaticData.dataIsReady ? "YES" : "NO";
@@ -61,11 +71,14 @@ public:
 			delimPosIndex = FileContent.Find(delim);
 			symbolCount = (delimPosIndex != -1) ? (delimPosIndex + 1) : FileContent.Len();
 			UE_LOG(LogTemp, Warning, TEXT("---------> Delimiter position: %i"), delimPosIndex);
-			if (symbolCount < minLineLength) FSDHelp::Throw(TEXT("Ill formatted line: "), CurrentInstanceString);
+			if (symbolCount < minLineLength) FSDUtil::Throw(TEXT("Ill formatted line: "), CurrentInstanceString);
 
 			CurrentInstanceString = FileContent.Left(symbolCount); // save fragment
 			CurrentInstanceString.RemoveFromEnd(TEXT("\n")); // try to remove just in case
 
+			/**
+			 * This could actually be slowing process down. Potentially remove later.
+			 */
 			FileContent.RightChopInline(symbolCount, true); // remove fragment from variable and free space
 			FileContent.RemoveFromStart(TEXT("\n")); // try to remove just in case
 
@@ -116,7 +129,7 @@ public:
 	static void CreateStaticData() {
 		FSDTypeData<E> instanceStruct;
 		std::vector<FSDInstanceProp> instanceProps = GetPropFromString();
-		FSDInstanceAction<E>(instanceStruct, instanceProps, ESDInstanceAction::loadingStaticData);
+		TypeAction(instanceStruct, instanceProps, ESDInstanceAction::loadingStaticData);
 		UE_LOG(LogTemp, Warning, TEXT("---------> Adding instance data to map..."));
 	};
 	
@@ -128,7 +141,7 @@ public:
 		for (auto& tuple : typeData)
 		{
 			FSDTypeData<E>& inst = tuple.Value;
-			line = FSDHelp::StdStringToFstring(FEncodeInstanceData<E>(inst));
+			line = FSDUtil::StdStringToFstring(FEncodeInstanceData<E>(inst));
 			StaticDataFString.Append(line);
 		}
 	};
@@ -142,7 +155,7 @@ public:
 	template<ESDTypes E>
 	static std::string FEncodeInstanceData(FSDTypeData<E>& inst) {
 		std::vector<FSDInstanceProp> instProps;
-		FSDInstanceAction<E>(inst, instProps, ESDInstanceAction::savingStaticData);
+		TypeAction(inst, instProps, ESDInstanceAction::savingStaticData);
 
 		std::string encodedInstance;
 
@@ -166,7 +179,7 @@ public:
 				encodedInstance.push_back(tokenDelimiter);
 
 				for (auto value : prop.propValues) {
-					UE_LOG(LogTemp, Warning, TEXT("---------> Iterating over one of the values: %s"), *FSDHelp::StdStringToFstring(value));
+					UE_LOG(LogTemp, Warning, TEXT("---------> Iterating over one of the values: %s"), *FSDUtil::StdStringToFstring(value));
 					encodedInstance.append(value);
 					encodedInstance.push_back(tokenDelimiter);
 				}
@@ -184,8 +197,8 @@ public:
 	};
 
 	static std::vector<FSDInstanceProp> GetPropFromString() {
-		FSDHelp::ExtractedChunks instancePropsChunks = FSDHelp::ExtractChunks(
-			FSDHelp::FstringToStdString(CurrentInstanceString)
+		FSDUtil::ExtractedChunks instancePropsChunks = FSDUtil::ExtractChunks(
+			FSDUtil::FstringToStdString(CurrentInstanceString)
 		);
 
 		std::vector<FSDInstanceProp> instanceProps;
@@ -193,11 +206,11 @@ public:
 		// Parsing prop by prop
 		for (std::string propChunk : instancePropsChunks.chunks) {
 			FSDInstanceProp prop;
-			UE_LOG(LogTemp, Warning, TEXT("---------> Parsing prop chunk: %s"), *FSDHelp::StdStringToFstring(propChunk));
+			UE_LOG(LogTemp, Warning, TEXT("---------> Parsing prop chunk: %s"), *FSDUtil::StdStringToFstring(propChunk));
 
-			FSDHelp::ExtractedChunks propDescriptors = FSDHelp::ExtractChunks(propChunk, ',');
+			FSDUtil::ExtractedChunks propDescriptors = FSDUtil::ExtractChunks(propChunk, ',');
 
-			int32 typeCode = FSDHelp::StdStringToInt32(propDescriptors.chunks[0]);
+			int32 typeCode = FSDUtil::StdStringToInt32(propDescriptors.chunks[0]);
 			prop.propValueType = static_cast<ESDValueTypes>(typeCode);
 			prop.propName = propDescriptors.chunks[1];
 
@@ -208,7 +221,7 @@ public:
 				prop.isArray = true;
 				UE_LOG(LogTemp, Warning, TEXT("---------> About to write values for property containing array."));
 				for (int i = 0; (i + 3) < propDescriptors.chunks.size(); ++i) {
-					UE_LOG(LogTemp, Warning, TEXT("---------> Writing array value into Static Data instance property: %s"), *FSDHelp::StdStringToFstring(propDescriptors.chunks[i + 3]));
+					UE_LOG(LogTemp, Warning, TEXT("---------> Writing array value into Static Data instance property: %s"), *FSDUtil::StdStringToFstring(propDescriptors.chunks[i + 3]));
 					prop.propValues.push_back(propDescriptors.chunks[i + 3]);
 				}
 			}
@@ -230,25 +243,26 @@ public:
 	};
 
 	template<class T>
-	static void PropertyAction(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, ESDInstanceAction action) {
+	// PropertyAction
+	static void PA(T& instanceProperty, std::string propName, std::vector<FSDInstanceProp>& properties, ESDInstanceAction action) {
 		if (action == ESDInstanceAction::loadingStaticData) {
-			UE_LOG(LogTemp, Warning, TEXT("---------> Trying to write to instance prop: %s."), *FSDHelp::StdStringToFstring(propName));
+			UE_LOG(LogTemp, Warning, TEXT("---------> Trying to write to instance prop: %s."), *FSDUtil::StdStringToFstring(propName));
 			for (FSDInstanceProp prop : properties) {
 				if (propName == prop.propName) {
 					for (int32 i = 0; i < prop.propValues.size(); i++) {
-						UE_LOG(LogTemp, Warning, TEXT("---------> Write to instance value: %s."), *FSDHelp::StdStringToFstring(prop.propValues[i]));
-						FSDHelp::SetEntityValueFromStdString(instanceProperty, prop.propValues[i]);
+						UE_LOG(LogTemp, Warning, TEXT("---------> Write to instance value: %s."), *FSDUtil::StdStringToFstring(prop.propValues[i]));
+						FSDUtil::SetEntityValueFromStdString(instanceProperty, prop.propValues[i]);
 					}
 					return;
 				}
 			}
-			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name: '%s' not found."), *FSDHelp::StdStringToFstring(propName));
+			UE_LOG(LogTemp, Warning, TEXT("---------> [!!!!] Prop of name: '%s' not found."), *FSDUtil::StdStringToFstring(propName));
 		}
 		else if (action == ESDInstanceAction::savingStaticData) {
 			FSDInstanceProp prop;
 			prop.propName = propName;
-			prop.propValueType = FSDHelp::GetValueTypeFromType<T>();
-			FSDHelp::ToStdStringAndAssign(instanceProperty, prop);
+			prop.propValueType = FSDUtil::GetValueTypeFromType<T>();
+			FSDUtil::ToStdStringAndAssign(instanceProperty, prop);
 
 			properties.push_back(prop);
 		}
@@ -266,30 +280,28 @@ public:
 	};
 
 	template<ESDTypes E>
-	static TMap<int32, FSDTypeData<E>> GetTypeData() { return StaticData.type1; };
-	template<> static TMap<int32, FSDTypeData<ESDTypes::type1>> GetTypeData<ESDTypes::type1>() { return StaticData.type1; };
-	template<> static TMap<int32, FSDTypeData<ESDTypes::type2>> GetTypeData<ESDTypes::type2>() { return StaticData.type2; };
+	static auto GetTypeData() { return StaticData.type1; };
+	template<> static auto GetTypeData<ESDTypes::type1>() { return StaticData.type1; };
+	template<> static auto GetTypeData<ESDTypes::type2>() { return StaticData.type2; };
 
-	typedef std::vector<FSDInstanceProp>& P;
-	typedef ESDInstanceAction A;
-	template<ESDTypes E>
-	static void FSDInstanceAction(FSDTypeData<E>& inst, P instProps, A action) {};
-	template<> static void FSDInstanceAction<ESDTypes::type1>(FSDTypeData<ESDTypes::type1>& inst, P instProps, A action) {
-		PropertyAction(inst.id, "id", instProps, action);
-		PropertyAction(inst.prop1, "prop1", instProps, action);
-		PropertyAction(inst.prop2, "prop2", instProps, action);
-		if (action == A::loadingStaticData) StaticData.type1.Add(inst.id, inst);
+	typedef std::vector<FSDInstanceProp>& P; // Vector of instance properties
+	typedef ESDInstanceAction A; // Action to perform
+	static void TypeAction(FSDTypeData<ESDTypes::type1>& i /* i - instance */, P p, A a) {
+		PA(i.id, "id", p, a);
+		PA(i.prop1, "prop1", p, a);
+		PA(i.prop2, "prop2", p, a);
+		if (a == A::loadingStaticData) StaticData.type1.Add(i.id, i);
 	};
-	template<> static void FSDInstanceAction<ESDTypes::type2>(FSDTypeData<ESDTypes::type2>& inst, P instProps, A action) {
-		PropertyAction(inst.id, "id", instProps, action);
-		PropertyAction(inst.prop1, "prop1", instProps, action);
-		PropertyAction(inst.prop2, "prop2", instProps, action);
-		PropertyAction(inst.prop3, "prop3", instProps, action);
-		PropertyAction(inst.prop4, "prop4", instProps, action);
-		PropertyAction(inst.prop5, "prop5", instProps, action);
-		PropertyAction(inst.prop6, "prop6", instProps, action);
-		PropertyAction(inst.prop7, "prop7", instProps, action);
-		PropertyAction(inst.prop8, "prop8", instProps, action);
-		if (action == A::loadingStaticData) StaticData.type2.Add(inst.id, inst);
+	static void TypeAction(FSDTypeData<ESDTypes::type2>& i, P p, A a) {
+		PA(i.id, "id", p, a);
+		PA(i.prop1, "prop1", p, a);
+		PA(i.prop2, "prop2", p, a);
+		PA(i.prop3, "prop3", p, a);
+		PA(i.prop4, "prop4", p, a);
+		PA(i.prop5, "prop5", p, a);
+		PA(i.prop6, "prop6", p, a);
+		PA(i.prop7, "prop7", p, a);
+		PA(i.prop8, "prop8", p, a);
+		if (a == A::loadingStaticData) StaticData.type2.Add(i.id, i);
 	};
 };

@@ -3,22 +3,11 @@
 
 //#include "StaticDataTypes.generated.h"
 
-enum class ESDInstanceAction {
-	savingStaticData,
-	loadingStaticData,
-};
-
-enum class ESDSpecializations {
-	createStaticData,
-	saveStaticData,
-};
-
 enum class ESDValueTypes {
 	int32 = 0,
 	flt,
 	string,
 	boolean,
-	ETestEnum,
 };
 
 struct FSDInstanceProp {
@@ -28,15 +17,10 @@ struct FSDInstanceProp {
 	bool isArray = false;
 };
 
-enum class ETestEnum {
-	testValue1 = 0,
-	testValue2,
-	testValue3,
-};
-
 enum class ESDTypes {
 	type1 = 0,
 	type2,
+	type3,
 };
 
 struct FType1Data {
